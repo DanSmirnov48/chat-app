@@ -39,3 +39,17 @@ export const findUserByEmail = async ({ email }: { email: User["email"] }) => {
 
     return author;
 };
+
+export const findUserById = async ({ id }: { id: User["id"] }) => {
+    const author = await prisma.user.findUnique({
+        where: { id },
+    });
+
+    return author;
+};
+
+export const getAllUSers = async () => {
+    const author = await prisma.user.findMany();
+    
+    return author;
+};
