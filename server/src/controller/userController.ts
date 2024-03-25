@@ -32,7 +32,7 @@ export const signup = asyncHandler(async (req: Request, res: Response) => {
     const email: string | null = req.body.email ?? null;
     const password: string | null = req.body.password ?? null;
 
-    if (!name || name.length < 3 || name.length > 31 || !/^[a-z0-9_-]+$/.test(name)) {
+    if (!name || name.length < 3 || name.length > 31) {
         return res.status(400).json("Invalid password").end();
     }
     if (!email || typeof email !== "string" || !validator.isEmail(email)) {
