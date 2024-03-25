@@ -7,6 +7,7 @@ import { SigninValidation } from "@/lib/validation";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useSignInAccount } from "@/lib/react-query/queries/auth";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
@@ -25,6 +26,8 @@ const SigninForm = () => {
     }
   };
 
+  const { mutateAsync: signInAccount, isPending: loadingUser } = useSignInAccount();
+
   const form = useForm<z.infer<typeof SigninValidation>>({
     resolver: zodResolver(SigninValidation),
     defaultValues: {
@@ -33,7 +36,15 @@ const SigninForm = () => {
     },
   });
 
-  const handleSignin = async (user: z.infer<typeof SigninValidation>) => { };
+  const handleSignin = async (user: z.infer<typeof SigninValidation>) => {
+    try {
+      const session = await signInAccount(user);
+      console.log(session)
+
+    } catch (error) {
+      console.log(error)
+    }
+  };
 
   return (
     <Card className="w-full px-6 py-8 md:px-8 lg:w-1/2 max-w-2xl rounded-xl shadow-lg">
