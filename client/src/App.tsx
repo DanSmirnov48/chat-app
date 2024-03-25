@@ -1,9 +1,24 @@
-import { Button } from './components/ui/button'
+import { Route, Routes } from "react-router-dom";
+import RootLayout from "./_root/RootLayout";
+import { Home } from "./_root/pages";
+import AuthLayout from "./_auth/AuthLayout";
+import { SignIn, SignUp } from "./_auth/forms";
 
-function App() {
+export default function App() {
   return (
-    <Button>Click me</Button>
-  )
-}
+    <main className="flex">
+      <Routes>
+        {/* Auth Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/sign-up" element={<SignUp />} />
+        </Route>
 
-export default App
+        {/* Public Routes */}
+        <Route element={<RootLayout />}>
+          <Route index element={<Home />} />
+        </Route>
+      </Routes>
+    </main>
+  );
+}
