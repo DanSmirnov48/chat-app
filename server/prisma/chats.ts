@@ -1,4 +1,4 @@
-import { PrismaClient, Chat, User } from "@prisma/client";
+import { PrismaClient, Chat } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,7 @@ export async function create(user1Id: string, user2Id: string): Promise<Chat> {
             users: {
                 connect: [{ id: user1Id }, { id: user2Id }]
             }
-        }
+        },
     });
 
     return newChat;
@@ -38,7 +38,12 @@ export async function findChatByUsers(user1Id: string, user2Id: string): Promise
                     }
                 }
             ]
-        }
+        },
+        include: {
+            _count: false,
+            Message: false,
+            users: false
+        },
     });
 
     return existingChat;
@@ -52,7 +57,12 @@ export async function findChatsByUser(userId: string): Promise<Chat[]> {
                     id: userId
                 }
             }
-        }
+        },
+        include: {
+            _count: false,
+            Message: false,
+            users: false
+        },
     });
 
     return userChats;

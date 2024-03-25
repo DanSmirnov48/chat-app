@@ -35,6 +35,11 @@ export const createUser = async ({
 export const findUserByEmail = async ({ email }: { email: User["email"] }) => {
     const author = await prisma.user.findUnique({
         where: { email },
+        include: {
+            _count: false,
+            chats: false,
+            Message: false,
+        }
     });
 
     return author;
@@ -43,6 +48,11 @@ export const findUserByEmail = async ({ email }: { email: User["email"] }) => {
 export const findUserById = async ({ id }: { id: User["id"] }) => {
     const author = await prisma.user.findUnique({
         where: { id },
+        include: {
+            _count: false,
+            chats: false,
+            Message: false,
+        }
     });
 
     return author;
@@ -50,6 +60,6 @@ export const findUserById = async ({ id }: { id: User["id"] }) => {
 
 export const getAllUSers = async () => {
     const author = await prisma.user.findMany();
-    
+
     return author;
 };

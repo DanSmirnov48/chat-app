@@ -14,20 +14,33 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  email     String   @unique
+  email     String    @unique
   password  String
-  members   String[] @db.ObjectId
-  chats     Chat[]   @relation(fields: [members], references: [id])
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @default(now()) @map(name: "updated_at")
+  members   String[]  @db.ObjectId
+  chats     Chat[]    @relation(fields: [members], references: [id])
+  Message   Message[]
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @default(now()) @map(name: "updated_at")
 }
 
 model Chat {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  members   String[]  @db.ObjectId
+  users     User[]    @relation(fields: [members], references: [id])
+  Message   Message[]
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @default(now()) @map(name: "updated_at")
+}
+
+model Message {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  members   String[] @db.ObjectId
-  users     User[]   @relation(fields: [members], references: [id])
+  content   String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String   @db.ObjectId
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String   @db.ObjectId
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @default(now()) @map(name: "updated_at")
 }
