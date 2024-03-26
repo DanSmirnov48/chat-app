@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from 'cors';
+import cookieParser from "cookie-parser";
 import connectDB from "./config/db";
 import { config } from "dotenv";
 import userRouter from './routes/userRoute';
@@ -13,8 +14,15 @@ connectDB()
 const app: Application = express();
 const port = process.env.PORT || 8080;
 
+app.use(cookieParser());
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    credentials: true,
+}));
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Healthy");
