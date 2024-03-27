@@ -10,10 +10,27 @@ import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useSignInAccount } from "@/lib/react-query/queries/auth";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { IUser } from "@/types";
+import { useUserContext } from "@/context/AuthContext";
+import { toast } from "sonner";
+
+interface AuthResponse {
+  status?: any;
+  error?: any;
+  statusText?: string;
+  data?: {
+    accessToke: string;
+    status: string
+    data: {
+      userWithoutPassword: IUser;
+    }
+  };
+}
 
 const SigninForm = () => {
 
   const navigate = useNavigate();
+  const { setUser, setIsAuthenticated } = useUserContext();
 
   const [type, setType] = useState<'password' | 'text'>('password');
   const [error, setError] = useState<string | undefined>();
@@ -38,11 +55,22 @@ const SigninForm = () => {
 
   const handleSignin = async (user: z.infer<typeof SigninValidation>) => {
     try {
-      const session = await signInAccount(user);
+      const session: AuthResponse = await signInAccount(user);
       console.log(session)
-
+      if (session.error && session.error.error === "Incorrect email or password") {
+        setError(session.error.error)
+      }
+      if (session.data && session.data.status === "success") {
+        const user = session.data.data.userWithoutPassword as IUser
+        setUser(user)
+        setIsAuthenticated(true)
+        toast.success(`Nice to see you back ${user.name}`)
+        navigate("/");
+      }
     } catch (error) {
-      console.log(error)
+      toast.error('Unknown Error', {
+        description: `Unknown Error at Sign In: ${error}`,
+      })
     }
   };
 
@@ -111,8 +139,8 @@ const SigninForm = () => {
               />
             </div>
             <div className="mt-6">
-              <Button type="submit" disabled={false} className="w-full px-6 py-3 text-lg font-medium tracking-wide text-white dark:text-dark-4 capitalize transition-colors duration-300 transform rounded-lg focus:outline-none focus:ring focus:ring-gray-300 focus:ring-opacity-50">
-                {false ? <><Loader2 className="animate-spin h-5 w-5 mr-3" />Processing...</> : <>log in</>}
+              <Button type="submit" disabled={loadingUser} className="w-full px-6 py-3 text-lg font-medium tracking-wide text-white dark:text-dark-4 capitalize transition-colors duration-300 transform rounded-lg focus:outline-none focus:ring focus:ring-gray-300 focus:ring-opacity-50">
+                {loadingUser ? <><Loader2 className="animate-spin h-5 w-5 mr-3" />Processing...</> : <>log in</>}
               </Button>
             </div>
           </form>

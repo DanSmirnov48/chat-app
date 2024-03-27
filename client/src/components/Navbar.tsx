@@ -1,8 +1,11 @@
 import { LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import { buttonVariants } from "./ui/button";
+import { UserNav } from "./UserNav";
+import { useUserContext } from "@/context/AuthContext";
 
 const Navbar = () => {
+  const { isAuthenticated } = useUserContext();
   return (
     <header className="sticky h-20 inset-x-0 top-0 z-30 w-full bg-light-1 dark:bg-dark-2 transform duration-700 ease-in-out border-b border-gray-200 bg-background backdrop-blur-lg transition-all">
       <div className="mx-auto w-full max-w-screen-2xl px-2.5 md:px-10 flex h-20 items-center space-x-4 sm:justify-between sm:space-x-0">
@@ -21,10 +24,10 @@ const Navbar = () => {
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-6">
             <>
-              {false ? (
+              {isAuthenticated ? (
                 <>
-                  <h1>User</h1>
-                </>
+                <UserNav />
+              </>
               ) : (
                 <>
                   <Link

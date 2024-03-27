@@ -1,4 +1,4 @@
-import { createUserAccount, signInAccount, signOutAccount } from "@/lib/backend-api/users";
+import { createUserAccount, getUserSession, signInAccount, signOutAccount } from "@/lib/backend-api/users";
 import { INewUser } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 
@@ -24,4 +24,12 @@ export const useSignInAccount = () => {
 
 export const useSignOutAccount = () => {
     return useMutation({ mutationFn: signOutAccount });
+};
+
+export const useGetUserSession = () => {
+    return useMutation({
+        mutationFn: () => getUserSession(),
+        onSuccess: (data) => { },
+        onError: (data) => { },
+    });
 };
