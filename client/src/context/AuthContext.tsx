@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         try {
             const session: AuthResponse | undefined = await getSession();
-            console.log(session)
             if (session === undefined) {
                 return false;
             }
