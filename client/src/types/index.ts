@@ -20,3 +20,12 @@ export type IChatWithUser = {
     createdAt: string;
     updatedAt: string;
 };
+
+export type IMessage = {
+    id: string;
+    content: string;
+    senderId: string;
+    chatId: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
