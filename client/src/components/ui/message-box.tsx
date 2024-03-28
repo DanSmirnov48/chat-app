@@ -2,6 +2,7 @@ import React, { forwardRef } from "react";
 import { cva, VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 
 const messageBoxVariants = cva(
     "p-2 rounded-lg",
@@ -38,9 +39,14 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(
                 {...props}
             >
                 <div className={(messageBoxVariants({ avatar: isSelf ? "self" : "other" }))}>
-                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-500 flex-shrink-0">
-                        {userInitial}
-                    </div>
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage
+                            src={""}
+                            alt={""}
+                            className="object-cover"
+                        />
+                        <AvatarFallback className="bg-zinc-300 border border-black/20">F U</AvatarFallback>
+                    </Avatar>
                     <div className={cn("relative text-sm py-2 px-4 shadow rounded-xl", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))}>
                         <div>{text}</div>
                     </div>
