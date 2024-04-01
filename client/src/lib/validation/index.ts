@@ -20,3 +20,7 @@ export const SigninValidation = z.object({
     email: z.string().email(),
     password: z.string().min(8, { message: "Password must be at least 8 characters." }),
 });
+
+export const NewMessageValidation = z.object({
+    content: z.string().min(1, { message: "This field is required" }).max(1000, { message: "Maximum 100 characters." }),
+});

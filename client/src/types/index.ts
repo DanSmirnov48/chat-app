@@ -29,3 +29,9 @@ export type IMessage = {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export type INewMessage = {
+    chatId: string;
+    senderId: string;
+    content: string;
+}
