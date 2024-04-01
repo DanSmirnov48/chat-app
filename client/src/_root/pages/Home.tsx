@@ -4,7 +4,8 @@ import { useUserContext } from '@/context/AuthContext'
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
 import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
 import { IChatWithUser, IUser } from '@/types'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client'
 
 const NoChatSelectedWindow = () => {
   return (
@@ -17,11 +18,39 @@ const NoChatSelectedWindow = () => {
 
 const home = () => {
   const [selectedChatId, setSelectedChatId] = useState<IChatWithUser['id'] | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null)
+  const [onlineUsers, setOnlineUsers] = useState([])
 
-  const { user } = useUserContext();
+  const { user, isAuthenticated } = useUserContext();
   const { mutateAsync: createNewChat } = useCreateNewChat()
   const { data: allUSers, isLoading: allUsersLoading } = useGetAllUsers()
   const { data: getUserChats, isLoading: userChatsLoading } = useGetChatsByUserId({ userId: user.id })
+
+  console.log({ onlineUsers })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const newSocket = io("http://localhost:3000")
+      setSocket(newSocket)
+
+      return () => {
+        newSocket.disconnect()
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (socket && isAuthenticated) {
+      socket.emit("addNewUser", user.id)
+      socket.on("getOnlineUsers", (res) => {
+        setOnlineUsers(res)
+      })
+
+      return () => {
+        socket.off("getOnlineUsers");
+      }
+    }
+  }, [socket])
 
   const pChats = allUSers?.data.users.filter((u: IUser) => {
     let isChatCreaterd = false
@@ -125,16 +154,21 @@ const home = () => {
                   <span className="flex items-center justify-center bg-gray-300 h-4 w-4 rounded-full">{!allUsersLoading && pChats.length}</span>
                 </div>
                 <div className="flex flex-col space-y-1 mt-4 -mx-2 overflow-y-auto">
-                  {!allUsersLoading && pChats.map((user: IUser) => (
-                    <div key={user.id}>
-                      <button onClick={() => handleCreateNewChat(user.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
-                        <div className="flex items-center justify-center h-8 w-8 bg-purple-200 rounded-full">
-                          J
-                        </div>
-                        <div className="ml-2 text-sm font-semibold">{user.name}</div>
-                      </button>
-                    </div>
-                  ))}
+                  {!allUsersLoading && pChats.map((u: IUser) => {
+                    //@ts-ignore
+                    const isOnline = onlineUsers.some((user) => user?.userId === u.id)
+                    return (
+                      <div key={u.id} className="relative">
+                        <button onClick={() => handleCreateNewChat(u.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
+                          <div className="flex items-center justify-center relative h-8 w-8 bg-purple-200 rounded-full">
+                            J
+                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-0 right-0 border border-white`}></div>
+                          </div>
+                          <div className="ml-2 text-sm font-semibold">{u.name}</div>
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </div>

@@ -5,8 +5,8 @@ import { Chat } from "@prisma/client";
 
 export const createChat = asyncHandler(async (req: Request, res: Response) => {
 
-    const user1Id: string | null = req.body.firstId ?? null;
-    const user2Id: string | null = req.body.secondId ?? null;
+    const user1Id: string | null = req.body.user1Id ?? null;
+    const user2Id: string | null = req.body.user2Id ?? null;
 
     if (!user1Id || !user2Id) {
         return res.status(400).json("Invalid IDs").end();

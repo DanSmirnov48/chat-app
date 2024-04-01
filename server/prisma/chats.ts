@@ -61,7 +61,7 @@ export async function findChatsByUser(userId: string): Promise<Chat[]> {
         include: {
             _count: false,
             Message: false,
-            users: false
+            users: true
         },
     });
 
