@@ -55,3 +55,12 @@ export async function signOutAccount() {
         console.log(error);
     }
 }
+
+export async function getAllUsers() {
+    try {
+        const response = await axios.get('/api/users')
+        return response
+    } catch (error) {
+        console.log(error);
+    }
+}

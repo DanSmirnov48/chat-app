@@ -1,8 +1,9 @@
 import Chatbox from '@/components/chatbox';
 import { Shell } from '@/components/shell'
 import { useUserContext } from '@/context/AuthContext'
-import { useGetChatsByUserId } from '@/lib/react-query/queries/chat'
-import { IChatWithUser } from '@/types'
+import { useGetAllUsers } from '@/lib/react-query/queries/auth';
+import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
+import { IChatWithUser, IUser } from '@/types'
 import { useState } from 'react';
 
 const NoChatSelectedWindow = () => {
@@ -18,8 +19,30 @@ const home = () => {
   const [selectedChatId, setSelectedChatId] = useState<IChatWithUser['id'] | null>(null);
 
   const { user } = useUserContext();
+  const { mutateAsync: createNewChat } = useCreateNewChat()
+  const { data: allUSers, isLoading: allUsersLoading } = useGetAllUsers()
   const { data: getUserChats, isLoading: userChatsLoading } = useGetChatsByUserId({ userId: user.id })
 
+  const pChats = allUSers?.data.users.filter((u: IUser) => {
+    let isChatCreaterd = false
+
+    if (user.id === u.id) return false
+
+    if (getUserChats?.data) {
+      isChatCreaterd = getUserChats.data.some((chat: IChatWithUser) => {
+        return chat.users[0].id === u.id || chat.users[1].id === u.id
+      })
+    }
+    return !isChatCreaterd
+  })
+
+  async function handleCreateNewChat(newUser: IUser['id']) {
+    const res = await createNewChat({
+      user1Id: user.id,
+      user2Id: newUser
+    })
+    console.log(res)
+  }
 
   const userProfile = () => {
     return (
@@ -87,7 +110,7 @@ const home = () => {
                     const recepient = chat.users.find((u) => u.id !== user.id);
                     return recepient && (
                       <div key={recepient.id}>
-                        <button onClick={() => setSelectedChatId(chat.id)} className="flex flex-row items-center hover:bg-gray-100 rounded-xl p-2">
+                        <button onClick={() => setSelectedChatId(chat.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
                           <div className="flex items-center justify-center h-8 w-8 bg-purple-200 rounded-full">
                             J
                           </div>
@@ -96,6 +119,22 @@ const home = () => {
                       </div>
                     )
                   })}
+                </div>
+                <div className="flex flex-row items-center justify-between text-xs mt-5">
+                  <span className="font-bold">Potential Conversations</span>
+                  <span className="flex items-center justify-center bg-gray-300 h-4 w-4 rounded-full">{!allUsersLoading && pChats.length}</span>
+                </div>
+                <div className="flex flex-col space-y-1 mt-4 -mx-2 overflow-y-auto">
+                  {!allUsersLoading && pChats.map((user: IUser) => (
+                    <div key={user.id}>
+                      <button onClick={() => handleCreateNewChat(user.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
+                        <div className="flex items-center justify-center h-8 w-8 bg-purple-200 rounded-full">
+                          J
+                        </div>
+                        <div className="ml-2 text-sm font-semibold">{user.name}</div>
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
