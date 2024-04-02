@@ -3,9 +3,11 @@ import { Shell } from '@/components/shell'
 import { useUserContext } from '@/context/AuthContext'
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
 import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
-import { IChatWithUser, IUser } from '@/types'
+import { IChatWithMessages, IChatWithUser, IUser } from '@/types'
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client'
+import { format, isToday } from 'date-fns';
 
 const NoChatSelectedWindow = () => {
   return (
@@ -18,6 +20,7 @@ const NoChatSelectedWindow = () => {
 
 const home = () => {
   const [selectedChatId, setSelectedChatId] = useState<IChatWithUser['id'] | null>(null);
+  const [recipient, setRecipient] = useState<IUser | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null)
   const [onlineUsers, setOnlineUsers] = useState([])
 
@@ -135,54 +138,82 @@ const home = () => {
                   <span className="flex items-center justify-center bg-gray-300 h-4 w-4 rounded-full">{!userChatsLoading && getUserChats?.data.length}</span>
                 </div>
                 <div className="flex flex-col space-y-1 mt-4 -mx-2 overflow-y-auto">
-                  {getUserChats?.data.map((chat: IChatWithUser) => {
+                  {getUserChats?.data.map((chat: IChatWithMessages) => {
                     const recepient = chat.users.find((u) => u.id !== user.id);
-                    return recepient && (
-                      <div key={recepient.id}>
-                        <button onClick={() => setSelectedChatId(chat.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
-                          <div className="flex items-center justify-center h-8 w-8 bg-purple-200 rounded-full">
-                            J
-                          </div>
-                          <div className="ml-2 text-sm font-semibold">{recepient.name}</div>
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="flex flex-row items-center justify-between text-xs mt-5">
-                  <span className="font-bold">Potential Conversations</span>
-                  <span className="flex items-center justify-center bg-gray-300 h-4 w-4 rounded-full">{!allUsersLoading && pChats.length}</span>
-                </div>
-                <div className="flex flex-col space-y-1 mt-4 -mx-2 overflow-y-auto">
-                  {!allUsersLoading && pChats.map((u: IUser) => {
-                    //@ts-ignore
-                    const isOnline = onlineUsers.some((user) => user?.userId === u.id)
+
+                    if (!recepient) return null;
+
+                    let formattedDate = '';
+                    let content = '';
+
+                    if (chat.Message.length > 0) {
+                      const latestMessage = chat.Message[chat.Message.length - 1];
+                      const formattedCreatedAt = format(new Date(latestMessage.createdAt), 'dd/MM/yyyy');
+                      const messageDate = new Date(latestMessage.createdAt);
+                      const isTodayMessage = isToday(messageDate);
+
+                      formattedDate = isTodayMessage ? `Today at ${format(messageDate, 'HH:mm')}` : formattedCreatedAt;
+                      content = latestMessage.content;
+                    }
+
                     return (
-                      <div key={u.id} className="relative">
-                        <button onClick={() => handleCreateNewChat(u.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
-                          <div className="flex items-center justify-center relative h-8 w-8 bg-purple-200 rounded-full">
-                            J
-                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-0 right-0 border border-white`}></div>
+                      <div key={recepient.id}>
+                        <button onClick={() => { setSelectedChatId(chat.id), setRecipient(recepient) }} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
+                          <Avatar className="h-[50px] w-[50px]">
+                            <AvatarImage src={"/avatar.png"} />
+                          </Avatar>
+                          <div className='flex flex-col w-full h-[43px]'>
+                            <div className="flex flex-col h-full">
+                              <div className='flex flex-row w-full items-center justify-between'>
+                                <h2 className="ml-2 text-sm font-semibold">{recepient.name}</h2>
+                                {formattedDate && <h2 className="text-xs">{formattedDate}</h2>}
+                              </div>
+                              <div className='ml-2 text-sm text-left mt-auto max-w-44'>
+                                <h2 className="text-xs truncate">{content}</h2>
+                              </div>
+                            </div>
                           </div>
-                          <div className="ml-2 text-sm font-semibold">{u.name}</div>
                         </button>
                       </div>
-                    )
+                    );
                   })}
                 </div>
+                <>
+                  <div className="flex flex-row items-center justify-between text-xs mt-5">
+                    <span className="font-bold">Potential Conversations</span>
+                    <span className="flex items-center justify-center bg-gray-300 h-4 w-4 rounded-full">{!allUsersLoading && pChats.length}</span>
+                  </div>
+                  <div className="flex flex-col space-y-1 mt-4 -mx-2 overflow-y-auto">
+                    {!allUsersLoading && pChats.map((u: IUser) => {
+                      //@ts-ignore
+                      const isOnline = onlineUsers.some((user) => user?.userId === u.id)
+                      return (
+                        <div key={u.id} className="relative">
+                          <button onClick={() => handleCreateNewChat(u.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
+                            <div className="flex items-center justify-center relative h-8 w-8 bg-purple-200 rounded-full">
+                              J
+                              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-0 right-0 border border-white`}></div>
+                            </div>
+                            <div className="ml-2 text-sm font-semibold">{u.name}</div>
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div >
     );
   };
 
   return (
-    <Shell variant={'markdown'} className='h-[calc(100vh-10rem)]'>
+    <Shell variant={'markdown'}>
       <div className="flex h-full gap-2">
         {sidebar()}
-        {selectedChatId ? <Chatbox chatId={selectedChatId} /> : <NoChatSelectedWindow />}
+        {(selectedChatId && socket && recipient) ? <Chatbox chatId={selectedChatId} socket={socket} recipient={recipient} /> : <NoChatSelectedWindow />}
       </div>
     </Shell>
   );

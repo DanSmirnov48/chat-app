@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 const RootLayout = () => {
   return (
     <div className="w-full md:flex">
-      <section className="flex flex-1 min-h-screen">
+      <section className="flex flex-1 h-[calc(80vh-10rem)]">
         <Outlet />
       </section>
     </div>
