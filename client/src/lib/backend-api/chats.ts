@@ -30,3 +30,15 @@ export async function createChat(userIds: { user1Id: string, user2Id: string }) 
         }
     }
 }
+
+export async function getChatById({ chatId }: { chatId: string }) {
+    try {
+        const response = await axios.get(`/api/chats/findById/${chatId}`);
+        return response;
+    } catch (error: any) {
+        if (error.response.data === 'Unauthorized' && error.response.status === 401) {
+            console.log('Unauthorized')
+        }
+        return undefined
+    }
+}

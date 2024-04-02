@@ -60,10 +60,25 @@ export async function findChatsByUser(userId: string): Promise<Chat[]> {
         },
         include: {
             _count: false,
-            Message: false,
+            Message: true,
             users: true
         },
     });
 
     return userChats;
+}
+
+export async function findById(chatId: Chat['id']): Promise<Chat> {
+    const chat = await prisma.chat.findUniqueOrThrow({
+        where: {
+            id: chatId
+        },
+        include: {
+            _count: false,
+            Message: true,
+            users: false
+        },
+    });
+
+    return chat;
 }

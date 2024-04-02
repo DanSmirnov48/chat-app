@@ -30,6 +30,10 @@ export type IMessage = {
     updatedAt: Date;
 }
 
+export interface IChatWithMessages extends IChatWithUser {
+    Message: IMessage[];
+}
+
 export type INewMessage = {
     chatId: string;
     senderId: string;

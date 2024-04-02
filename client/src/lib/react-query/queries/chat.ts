@@ -1,4 +1,4 @@
-import { createChat, getUserChats } from "@/lib/backend-api/chats";
+import { createChat, getChatById, getUserChats } from "@/lib/backend-api/chats";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "../queryKeys";
 import { useUserContext } from "@/context/AuthContext";
@@ -11,6 +11,14 @@ export const useGetChatsByUserId = ({ userId }: { userId: string }) => {
         queryKey: [QUERY_KEYS.GET_CHATS_BY_USERID, userId],
         queryFn: () => getUserChats({ userId }),
         enabled: !!userId,
+    });
+};
+
+export const useGetChatByChatId = ({ chatId }: { chatId: string }) => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_CHAT_BY_ID, chatId],
+        queryFn: () => getChatById({ chatId }),
+        enabled: !!chatId,
     });
 };
 

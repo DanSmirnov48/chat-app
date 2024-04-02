@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import asyncHandler from "../middlewares/asyncHandler";
-import { findChatByUsers, create, findChatsByUser } from "../../prisma/chats";
+import { findChatByUsers, create, findChatsByUser, findById } from "../../prisma/chats";
 import { Chat } from "@prisma/client";
 
 export const createChat = asyncHandler(async (req: Request, res: Response) => {
@@ -60,6 +60,28 @@ export const findChatById = asyncHandler(async (req: Request, res: Response) => 
 
     try {
         const existingChat: Chat | null = await findChatByUsers(user1Id, user2Id);
+        if (existingChat) {
+            return res.status(200).json(existingChat).end();
+        } else {
+            return res.status(400).json({ error: "Chat Not Found" }).end();
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+    }
+});
+
+export const findChatByChatId = asyncHandler(async (req: Request, res: Response) => {
+
+    const chatId: string | null = req.params.chatId ?? null;
+
+    if (!chatId) {
+        return res.status(400).json("Invalid IDs").end();
+    }
+
+    try {
+        const existingChat: Chat = await findById(chatId);
         if (existingChat) {
             return res.status(200).json(existingChat).end();
         } else {

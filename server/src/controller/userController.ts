@@ -111,7 +111,7 @@ export const logIn = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-export const logout = (res: Response) => {
+export const logout = (req: Request, res: Response) => {
     res.clearCookie("accessToken");
     res.status(200).json({ status: 'success' });
     res.end()

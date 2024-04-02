@@ -10,7 +10,9 @@ import { MessageBox } from '@/components/ui/message-box';
 import { IChatWithUser, IMessage, INewMessage, IUser } from '@/types'
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useCreateNewMessage, useGetMessagesByChatId } from '@/lib/react-query/queries/messages';
+import { useEffect } from "react";
 import { Socket } from 'socket.io-client'
+import { useGetChatByChatId, useGetChatsByUserId } from "@/lib/react-query/queries/chat";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarImage } from "./ui/avatar";
 
@@ -21,8 +23,10 @@ interface ChatboxProps {
 }
 
 const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
-    const { user } = useUserContext();
-    const { data: getMessages, isLoading: chatMessagesLoading } = useGetMessagesByChatId({ chatId: chatId });
+    const { user, isAuthenticated } = useUserContext();
+    const { data: getMessages, isLoading: chatMessagesLoading, refetch } = useGetMessagesByChatId({ chatId: chatId });
+    const { data: currentChat, isLoading: currentChatLoading } = useGetChatByChatId({ chatId: chatId })
+    const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
     const { mutateAsync: createNewMessage } = useCreateNewMessage()
 
     const form = useForm<z.infer<typeof NewMessageValidation>>({
@@ -41,11 +45,33 @@ const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
 
         const res = await createNewMessage(newMessage)
         if (res && res.status === 201) {
+
+            const messageContext = message.content
+            const recipientId = currentChat?.data.members?.find((id: string) => id !== user.id)
+
+            console.log(`Sending 'sendMessage' Socket event to ${recipientId}, ${messageContext}`)
+            socket.emit("sendMessage", { messageContext, recipientId })
+
             form.reset()
+            refetchChats() // update the chats list in the sidebar
         } else {
             console.log(res)
         }
     };
+
+    useEffect(() => {
+        if (isAuthenticated && socket) {
+
+            console.log("Recieving 'getMessage' Socket Event")
+            socket.on("getMessage", (res) => {
+                refetch()
+            });
+
+            return () => {
+                socket.off("getMessage");
+            }
+        }
+    }, [socket, currentChat])
 
     return (
         <div className="flex-1 rounded-lg bg-accent lg:col-span-2">
