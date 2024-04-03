@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { v4 as uuidv4 } from 'uuid';
 
 const io = new Server({ cors: "http://localhost:5173" });
 
@@ -24,6 +25,14 @@ io.on("connection", (socket) => {
         console.log({ user })
         if (user) {
             io.to(user.socketId).emit('getMessage', message);
+            io.to(user.socketId).emit('getNotification', {
+                id: uuidv4(),
+                senderId: message.senderId,
+                chatId: message.chatId,
+                content: message.content,
+                isRead: false,
+                date: new Date(),
+            });
         }
     });
 

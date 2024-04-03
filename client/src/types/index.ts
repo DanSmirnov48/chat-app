@@ -39,3 +39,5 @@ export type INewMessage = {
     senderId: string;
     content: string;
 }
+
+export type INotification = INewMessage & { id: string, date: Date, isRead: boolean }

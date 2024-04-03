@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { buttonVariants } from "./ui/button";
 import { UserNav } from "./UserNav";
 import { useUserContext } from "@/context/AuthContext";
+import { UserNotification } from "./UserNotifications";
 
 const Navbar = () => {
   const { isAuthenticated } = useUserContext();
@@ -26,8 +27,9 @@ const Navbar = () => {
             <>
               {isAuthenticated ? (
                 <>
-                <UserNav />
-              </>
+                  <UserNotification />
+                  <UserNav />
+                </>
               ) : (
                 <>
                   <Link

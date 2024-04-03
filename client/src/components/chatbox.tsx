@@ -46,11 +46,10 @@ const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
         const res = await createNewMessage(newMessage)
         if (res && res.status === 201) {
 
-            const messageContext = message.content
             const recipientId = currentChat?.data.members?.find((id: string) => id !== user.id)
 
-            console.log(`Sending 'sendMessage' Socket event to ${recipientId}, ${messageContext}`)
-            socket.emit("sendMessage", { messageContext, recipientId })
+            console.log(`Sending 'sendMessage' Socket event to ${recipientId}`)
+            socket.emit("sendMessage", { ...newMessage, recipientId })
 
             form.reset()
             refetchChats() // update the chats list in the sidebar
@@ -65,6 +64,7 @@ const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
             console.log("Recieving 'getMessage' Socket Event")
             socket.on("getMessage", (res) => {
                 refetch()
+                refetchChats() // update the chats list in the sidebar
             });
 
             return () => {

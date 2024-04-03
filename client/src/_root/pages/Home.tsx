@@ -3,11 +3,12 @@ import { Shell } from '@/components/shell'
 import { useUserContext } from '@/context/AuthContext'
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
 import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
-import { IChatWithMessages, IChatWithUser, IUser } from '@/types'
+import { IChatWithMessages, IChatWithUser, INotification, IUser } from '@/types'
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client'
 import { format, isToday } from 'date-fns';
+import { useNotificationStore } from '@/hooks/useNotifications';
 
 const home = () => {
   const { user, isAuthenticated } = useUserContext();
@@ -19,6 +20,9 @@ const home = () => {
   const [recipient, setRecipient] = useState<IUser | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null)
   const [onlineUsers, setOnlineUsers] = useState([])
+
+  const { notifications, addNotification } = useNotificationStore();
+  console.log({ notifications })
 
   console.log({ onlineUsers })
 
@@ -42,6 +46,26 @@ const home = () => {
 
       return () => {
         socket.off("getOnlineUsers");
+      }
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (isAuthenticated && socket) {
+      socket.on("getNotification", (res: INotification) => {
+        if (res.chatId === selectedChatId) {
+          // The chat is open, mark the notification as read
+          console.log({ ...res });
+          addNotification({ ...res, isRead: true });
+        } else {
+          // The chat is not open, add the notification without marking it as read
+          console.log({ ...res });
+          addNotification(res);
+        }
+      });
+
+      return () => {
+        socket.off("getNotification");
       }
     }
   }, [socket])
