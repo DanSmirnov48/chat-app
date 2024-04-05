@@ -1,4 +1,5 @@
 import { format, isToday } from 'date-fns';
+import { useChatStore } from '@/hooks/useChat';
 import { useUserContext } from '@/context/AuthContext'
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
@@ -9,6 +10,7 @@ export default function ChatSidebar() {
     const { user } = useUserContext();
     const { mutateAsync: createNewChat } = useCreateNewChat()
     const { data: allUSers, isLoading: allUsersLoading } = useGetAllUsers()
+    const { onlineUsers, setSelectedChatId, setRecipient } = useChatStore();
     const { data: getUserChats, isLoading: userChatsLoading } = useGetChatsByUserId({ userId: user.id })
 
     const pChats = allUSers?.data.users.filter((u: IUser) => {
