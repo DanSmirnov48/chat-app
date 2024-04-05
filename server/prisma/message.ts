@@ -1,4 +1,4 @@
-import { Message, PrismaClient } from '@prisma/client';
+import { Message, MessageStatus, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,8 @@ export async function create(chatId: string, senderId: string, content: string):
             data: {
                 content: content,
                 senderId: senderId,
-                chatId: chatId
+                chatId: chatId,
+                status: MessageStatus.SENT
             }
         });
 
@@ -33,5 +34,16 @@ export async function findByChatId(chatId: string): Promise<Message[]> {
         return messages;
     } catch (error) {
         throw new Error(`Error retrieving messages: ${error}`);
+    }
+}
+
+export async function updateStatus(messageId: string, newStatus: MessageStatus): Promise<void> {
+    try {
+        await prisma.message.update({
+            where: { id: messageId },
+            data: { status: newStatus },
+        });
+    } catch (error) {
+        throw new Error(`Error updating message status: ${error}`);
     }
 }

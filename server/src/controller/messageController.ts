@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import asyncHandler from "../middlewares/asyncHandler";
-import { create, findByChatId} from "../../prisma/message";
-import { Message } from "@prisma/client";
+import { create, findByChatId, updateStatus } from "../../prisma/message";
+import { Message, MessageStatus } from "@prisma/client";
 
 export const createMessage = asyncHandler(async (req: Request, res: Response) => {
 
@@ -29,7 +29,7 @@ export const getMessagesByChatId = asyncHandler(async (req: Request, res: Respon
 
     const chatId: string | null = req.params.chatId ?? null;
 
-    if (!chatId ) {
+    if (!chatId) {
         return res.status(400).json("Invalid chat ID").end();
     }
 
@@ -40,6 +40,29 @@ export const getMessagesByChatId = asyncHandler(async (req: Request, res: Respon
         } else {
             return res.status(400).json({ error: "Messages Not Found" }).end();
         }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+    }
+});
+
+export const updateMessageStatus = asyncHandler(async (req: Request, res: Response) => {
+
+    const messageId: string | null = req.body.messageId ?? null;
+    const newStatus: string | null = req.body.newStatus ?? null;
+
+    if (!newStatus || !messageId) {
+        return res.status(400).json("Invalid Message Data").end();
+    }
+
+    if (!(newStatus in MessageStatus)) {
+        return res.status(400).json("Invalid message status").end();
+    }
+
+    try {
+        await updateStatus(messageId, newStatus as MessageStatus)
+        return res.status(200).json({ status: 'success' }).end();
 
     } catch (error) {
         console.error(error);
