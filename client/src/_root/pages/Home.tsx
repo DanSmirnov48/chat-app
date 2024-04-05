@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import { io } from 'socket.io-client'
-import { getMessage, INotification } from '@/types'
 import { Shell } from '@/components/shell'
 import Chatbox from '@/components/chatbox';
+import { useChatStore } from '@/hooks/useChat';
 import ChatSidebar from '@/components/chatSidebar';
 import { useUserContext } from '@/context/AuthContext'
 import { useNotificationStore } from '@/hooks/useNotifications';
-import { useChatStore } from '@/hooks/useChat';
+import { getMessage, INotification, MessageStatus } from '@/types'
 import { useGetChatsByUserId } from '@/lib/react-query/queries/chat';
-import { useGetMessagesByChatId } from '@/lib/react-query/queries/messages';
+import { useGetMessagesByChatId, useUpdateMessageStatus } from '@/lib/react-query/queries/messages';
 
 const home = () => {
   const { user, isAuthenticated } = useUserContext();
@@ -16,6 +16,7 @@ const home = () => {
   const { selectedChatId, socket, recipient, setOnlineUsers, setSocket } = useChatStore();
   const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
   const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
+  const { mutateAsync: updateMessageStatus } = useUpdateMessageStatus()
 
   useEffect(() => {
     if (isAuthenticated && !socket) {
@@ -42,14 +43,25 @@ const home = () => {
         refetchChats();
         if (res.chatId === selectedChatId) {
           addNotification({ ...res, isRead: true });
+          const updateRes = await updateMessageStatus({
+            messageId: res.messageId,
+            newStatus: MessageStatus.READ
+          })
+          console.log(updateRes)
         } else {
           addNotification(res);
+          new Audio('/notification-2870.wav').play();
         }
       });
 
       // Listen for "getMessage" event
       socket.on("getMessage", async (res: getMessage) => {
         console.log(res)
+        const updateRes = await updateMessageStatus({
+          messageId: res.messageId,
+          newStatus: MessageStatus.DELIVERED
+        })
+        console.log(updateRes)
         selectedChatId && refetchMessages();
         refetchChats();
       });

@@ -7,27 +7,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useUserContext } from '@/context/AuthContext'
 import { NewMessageValidation } from "@/lib/validation";
 import { MessageBox } from '@/components/ui/message-box';
-import { IChatWithUser, IMessage, INewMessage, IUser } from '@/types'
+import { IMessage, INewMessage, INewMessageBase, MessageStatus } from '@/types'
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useCreateNewMessage, useGetMessagesByChatId } from '@/lib/react-query/queries/messages';
-import { useEffect } from "react";
-import { Socket } from 'socket.io-client'
 import { useGetChatByChatId, useGetChatsByUserId } from "@/lib/react-query/queries/chat";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarImage } from "./ui/avatar";
+import { useChatStore } from "@/hooks/useChat";
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuShortcut,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 
-interface ChatboxProps {
-    chatId: IChatWithUser['id'],
-    socket: Socket,
-    recipient: IUser
-}
+const Chatbox = () => {
+    const { selectedChatId, socket, recipient, onlineUsers, setSelectedChatId } = useChatStore();
 
-const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
-    const { user, isAuthenticated } = useUserContext();
-    const { data: getMessages, isLoading: chatMessagesLoading, refetch } = useGetMessagesByChatId({ chatId: chatId });
-    const { data: currentChat, isLoading: currentChatLoading } = useGetChatByChatId({ chatId: chatId })
-    const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
+    const { user } = useUserContext();
     const { mutateAsync: createNewMessage } = useCreateNewMessage()
+    const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
+    const { data: currentChat } = useGetChatByChatId({ chatId: selectedChatId ?? "" });
+    const { data: getMessages, isLoading: chatMessagesLoading } = useGetMessagesByChatId({ chatId: selectedChatId ?? "" });
+
+    const isOnline = onlineUsers.find((u) => u.userId === recipient!.id);
 
     const form = useForm<z.infer<typeof NewMessageValidation>>({
         resolver: zodResolver(NewMessageValidation),
@@ -37,61 +41,65 @@ const Chatbox = ({ chatId, socket, recipient }: ChatboxProps) => {
     });
 
     const handleSendMessage = async (message: z.infer<typeof NewMessageValidation>) => {
-        const newMessage: INewMessage = {
-            chatId,
-            senderId: user.id,
-            content: message.content
-        }
+        if (selectedChatId && socket) {
+            const newMessage: INewMessageBase = {
+                chatId: selectedChatId,
+                senderId: user.id,
+                content: message.content,
+            }
 
-        const res = await createNewMessage(newMessage)
-        if (res && res.status === 201) {
-
-            const recipientId = currentChat?.data.members?.find((id: string) => id !== user.id)
-
-            console.log(`Sending 'sendMessage' Socket event to ${recipientId}`)
-            socket.emit("sendMessage", { ...newMessage, recipientId })
-
-            form.reset()
-            refetchChats() // update the chats list in the sidebar
-        } else {
+            const res = await createNewMessage(newMessage)
             console.log(res)
-        }
-    };
+            if (res && res.status === 201) {
+                //@ts-ignore
+                const messageId = res.data.id
+                const recipientId = currentChat?.data.members?.find((id: string) => id !== user.id)
 
-    useEffect(() => {
-        if (isAuthenticated && socket) {
+                console.log(`Sending 'sendMessage' Socket event to ${recipientId}`)
+                socket.emit("sendMessage", { ...newMessage, messageId, recipientId })
 
-            console.log("Recieving 'getMessage' Socket Event")
-            socket.on("getMessage", (res) => {
-                refetch()
+                form.reset()
                 refetchChats() // update the chats list in the sidebar
-            });
-
-            return () => {
-                socket.off("getMessage");
+            } else {
+                console.log(res)
             }
         }
-    }, [socket, currentChat])
+    };
 
     return (
         <div className="flex-1 rounded-lg bg-accent lg:col-span-2">
             <div className="flex flex-col h-full antialiased text-gray-800 overflow-hidden">
                 <div className="flex flex-row items-center w-full bg-indigo-100 border rounded-t-lg p-1.5">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={"/avatar.png"} />
-                    </Avatar>
+                    <div className='relative'>
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={"/avatar.png"} />
+                        </Avatar>
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-white`}></div>
+                    </div>
                     <div className='flex flex-col w-full'>
-                        <h2 className="ml-2 text-sm font-semibold">{recipient.name}</h2>
-                        <h2 className="ml-2 text-xs text-left">last see today at 15:15</h2>
+                        <h2 className="ml-2 text-sm font-semibold">{recipient!.name}</h2>
+                        <h2 className="ml-2 text-xs text-left">{isOnline ? "Online" : "last see today at 15:15"}</h2>
                     </div>
                 </div>
-                <ScrollArea className="h-[60vh] w-full">
-                    <div className="p-4">
-                        {(!chatMessagesLoading && getMessages) && getMessages.data.map((message: IMessage) => (
-                            <MessageBox key={message.id} message={message} isSelf={message.senderId === user.id} />
-                        ))}
-                    </div>
-                </ScrollArea>
+
+                <ContextMenu>
+                    <ContextMenuTrigger>
+                        <ScrollArea className="h-[60vh] w-full">
+                            <div className="p-4">
+                                {(!chatMessagesLoading && getMessages) && getMessages.data.map((message: IMessage) => (
+                                    <MessageBox key={message.id} message={message} isSelf={message.senderId === user.id} />
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-44">
+                        <ContextMenuItem inset onClick={() => setSelectedChatId(null)}>
+                            Close Chat
+                            <ContextMenuShortcut>⌘[</ContextMenuShortcut>
+                        </ContextMenuItem>
+                    </ContextMenuContent>
+                </ContextMenu>
+
                 <div className="m-2">
                     <Form {...form}>
                         <form

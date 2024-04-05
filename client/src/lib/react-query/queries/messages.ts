@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "../queryKeys";
-import { createMessage, getMessagesByChatId } from "@/lib/backend-api/messages";
-import { IMessage, INewMessage } from "@/types";
+import { createMessage, getMessagesByChatId, updateMessageStatus } from "@/lib/backend-api/messages";
+import { IMessage, INewMessageBase, MessageStatus } from "@/types";
 
 // ============================================================
 // CHAT QUERIES
@@ -18,7 +18,7 @@ export const useCreateNewMessage = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (message: INewMessage) => createMessage(message),
+        mutationFn: (message: INewMessageBase) => createMessage(message),
         onError: (error) => {
             console.log(error);
         },
@@ -41,5 +41,11 @@ export const updateChatMessages = (chatId: string, newMessage: IMessage) => {
     queryClient.setQueryData<IMessage[]>([QUERY_KEYS.GET_MESSAGES_BY_CHATID, chatId], (prevData) => {
         const previousMessages = prevData as IMessage[];
         return [...previousMessages, newMessage];
+    });
+};
+
+export const useUpdateMessageStatus = () => {
+    return useMutation({
+        mutationFn: (data: { messageId: IMessage['id'], newStatus: MessageStatus }) => updateMessageStatus(data),
     });
 };

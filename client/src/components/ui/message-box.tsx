@@ -40,8 +40,7 @@ interface MessageBoxProps
     isSelf: boolean;
 }
 
-const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(
-    ({ className, message, isSelf, ...props }, ref) => {
+const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, message, isSelf, ...props }, ref) => {
         const formattedTime = format(new Date(message.createdAt), "HH:mm");
         return (
             <div className={cn(messageBoxVariants({ align: isSelf ? "self" : "other", ...props }), className)} ref={ref}{...props}>

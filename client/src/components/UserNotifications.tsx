@@ -14,12 +14,14 @@ import {
 import { Bell, FileCheck, FileX, Navigation } from "lucide-react";
 import { useNotificationStore } from "@/hooks/useNotifications";
 import { useGetAllUsers } from "@/lib/react-query/queries/auth";
-import { INotification, IUser } from "@/types";
+import { INotification, IUser, MessageStatus } from "@/types";
 import { format, isToday } from "date-fns";
 import { useState } from "react";
+import { useUpdateMessageStatus } from "@/lib/react-query/queries/messages";
 
 export function UserNotification() {
     const [open, setOpen] = useState(false)
+    const { mutateAsync: updateMessageStatus } = useUpdateMessageStatus()
     const { data: allUsers, isLoading: allUsersLoading } = useGetAllUsers()
     const { notifications, markNotificationAsRead, clearNotifications } = useNotificationStore()
 
@@ -30,6 +32,16 @@ export function UserNotification() {
     const sortedNotifications = [...unreadNotifications].sort(
         (a: INotification, b: INotification) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    const handleMarkAsRead = async (item: INotification) => {
+        // console.log(item)
+        markNotificationAsRead(item.id)
+        const updateRes = await updateMessageStatus({
+            messageId: item.messageId,
+            newStatus: MessageStatus.READ
+        })
+        console.log(updateRes)
+    }
 
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -68,7 +80,7 @@ export function UserNotification() {
                                         <Navigation className="mr-2 h-4 w-4" />
                                         <span>View Chat</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => markNotificationAsRead(item.id)}>
+                                    <DropdownMenuItem onClick={() => handleMarkAsRead(item)}>
                                         <FileCheck className="mr-2 h-4 w-4" />
                                         <span>Mark as Read</span>
                                     </DropdownMenuItem>

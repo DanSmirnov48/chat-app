@@ -21,7 +21,7 @@ export type IChatWithUser = {
     updatedAt: string;
 };
 
-export type IMessage = {
+interface IMessageBase {
     id: string;
     content: string;
     senderId: string;
@@ -30,14 +30,34 @@ export type IMessage = {
     updatedAt: Date;
 }
 
+export interface IMessage extends IMessageBase {
+    status: MessageStatus;
+}
+
+export enum MessageStatus {
+    SENDING = "SENDING",
+    SENT = "SENT",
+    DELIVERED = "DELIVERED",
+    READ = "READ",
+}
+
 export interface IChatWithMessages extends IChatWithUser {
     Message: IMessage[];
 }
 
-export type INewMessage = {
-    chatId: string;
-    senderId: string;
-    content: string;
+export type INewMessageBase = Omit<IMessageBase, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type INewMessage = INewMessageBase & {
+    status: MessageStatus;
 }
 
-export type INotification = INewMessage & { id: string, date: Date, isRead: boolean }
+export type INotification = INewMessage & { id: string, date: Date, isRead: boolean, messageId: string };
+
+export type getMessage = {
+    chatId: string;
+    content: string;
+    messageId: string;
+    recipientId: string;
+    senderId: string;
+    status: string;
+}
