@@ -1,9 +1,10 @@
 import { format, isToday } from 'date-fns';
 import { useChatStore } from '@/hooks/useChat';
+import { Check, CheckCheck } from "lucide-react";
 import { useUserContext } from '@/context/AuthContext'
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
-import { IChatWithMessages, IChatWithUser, IUser } from '@/types'
+import { IChatWithMessages, IChatWithUser, IUser, MessageStatus } from '@/types'
 import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
 
 export default function ChatSidebar() {
@@ -86,6 +87,9 @@ export default function ChatSidebar() {
                                         content = latestMessage.content;
                                     }
 
+                                    const latestMessage = chat.Message[chat.Message.length - 1];
+                                    const isSelf = latestMessage.senderId === user.id;
+
                                     return (
                                         <div key={recepient.id}>
                                             <button onClick={() => { setSelectedChatId(chat.id), setRecipient(recepient) }} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
@@ -101,8 +105,12 @@ export default function ChatSidebar() {
                                                             <h2 className="ml-2 text-sm font-semibold">{recepient.name}</h2>
                                                             {formattedDate && <h2 className="text-xs">{formattedDate}</h2>}
                                                         </div>
-                                                        <div className='ml-2 text-sm text-left mt-auto max-w-44'>
-                                                            <h2 className="text-xs truncate">{content}</h2>
+                                                        <div className='flex items-center ml-2 text-sm text-left mt-auto max-w-44'>
+                                                            {isSelf && latestMessage.status === MessageStatus.SENDING && <Check className="w-[14px] h-[14px] ml-1 text-gray-600" />}
+                                                            {isSelf && latestMessage.status === MessageStatus.SENT && <Check className="w-[14px] h-[14px] ml-1 text-green-600" />}
+                                                            {isSelf && latestMessage.status === MessageStatus.DELIVERED && <CheckCheck className="w-[14px] h-[14px] ml-1 text-gray-600" />}
+                                                            {isSelf && latestMessage.status === MessageStatus.READ && <CheckCheck className="w-[14px] h-[14px] ml-1 text-green-600" />}
+                                                            <h2 className={`text-sm truncate ${isSelf ? 'ml-1' : ''}`}>{content}</h2>
                                                         </div>
                                                     </div>
                                                 </div>
