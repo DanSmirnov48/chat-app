@@ -6,6 +6,7 @@ type NotificationStore = {
     notifications: INotification[];
     addNotification: (notification: INotification) => void;
     markNotificationAsRead: (notificationId: string) => void;
+    removeNotification: (notificationId: string) => void;
     clearNotifications: () => void;
 };
 
@@ -20,6 +21,10 @@ export const useNotificationStore = create<NotificationStore>()(
                     notifications: state.notifications.map((notification) =>
                         notification.id === notificationId ? { ...notification, isRead: true } : notification
                     ),
+                })),
+            removeNotification: (notificationId) =>
+                set((state) => ({
+                    notifications: state.notifications.filter((notification) => notification.id !== notificationId),
                 })),
             clearNotifications: () => {
                 set({ notifications: [] });

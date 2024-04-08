@@ -55,8 +55,8 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
             <div className={messageBoxVariants({ avatar: isSelf ? "self" : "other" })}>
                 <ContextMenu>
                     <ContextMenuTrigger asChild>
-                        <div className={cn("relative text-sm py-2 px-4 shadow rounded-xl", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))} >
-                            <div className="mb-1 mr-16">{message.content}</div>
+                        <div className={cn("relative text-sm py-2 px-4 shadow rounded-xl max-w-xs", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))} >
+                            <div className="mb-1 mr-14">{message.content}</div>
                             <TooltipProvider delayDuration={300}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>

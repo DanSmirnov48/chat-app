@@ -18,29 +18,42 @@ import { INotification, IUser, MessageStatus } from "@/types";
 import { format, isToday } from "date-fns";
 import { useState } from "react";
 import { useUpdateMessageStatus } from "@/lib/react-query/queries/messages";
+import { useChatStore } from "@/hooks/useChat";
 
 export function UserNotification() {
+    const { socket, setSelectedChatId, setRecipient } = useChatStore()
     const [open, setOpen] = useState(false)
     const { mutateAsync: updateMessageStatus } = useUpdateMessageStatus()
     const { data: allUsers, isLoading: allUsersLoading } = useGetAllUsers()
-    const { notifications, markNotificationAsRead, clearNotifications } = useNotificationStore()
+    const { notifications, markNotificationAsRead, clearNotifications, removeNotification } = useNotificationStore()
 
     // Filter unread notifications
     const unreadNotifications = notifications.filter((notification: INotification) => !notification.isRead);
 
     // Sort unread notifications by date in descending order
-    const sortedNotifications = [...unreadNotifications].sort(
+    const sortedNotifications = [...notifications].sort(
         (a: INotification, b: INotification) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
     const handleMarkAsRead = async (item: INotification) => {
-        // console.log(item)
         markNotificationAsRead(item.id)
-        const updateRes = await updateMessageStatus({
+
+        await updateMessageStatus({
             messageId: item.messageId,
             newStatus: MessageStatus.READ
         })
-        console.log(updateRes)
+
+        if (socket) {
+            const messageId = item.messageId
+            const newStatus = MessageStatus.READ as String
+            const recipientId = item.senderId
+            socket.emit("sendMessageStatusUpdate", { messageId, recipientId, newStatus })
+        }
+    }
+
+    const handleOpenChat = async (item: INotification, sender: IUser) => {
+        setSelectedChatId(item.chatId)
+        setRecipient(sender)
     }
 
     return (
@@ -49,10 +62,12 @@ export function UserNotification() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <div className="group flex items-center p-2">
                         <span className="relative inline-block mt-1">
-                            <Bell aria-hidden="true" className="w-6 h-6 text-gray-700 fill-current dark:text-light-2" />
-                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1.5 text-sm font-bold leading-none text-dark-4 transform translate-x-1/2 -translate-y-1/2 bg-purple-400/70 rounded-full">
-                                {unreadNotifications.length ?? 0}
-                            </span>
+                            <Bell aria-hidden="true" className={`w-6 h-6 text-gray-700 fill-current dark:text-light-2 ${unreadNotifications.length > 0 ? 'animate-bounce' : ''} group-hover:animate-none`} />
+                            {notifications.length > 0 && (
+                                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1.5 text-sm font-bold leading-none text-dark-4 transform translate-x-1/2 -translate-y-1/2 bg-purple-400/70 rounded-full">
+                                    {notifications.length}
+                                </span>
+                            )}
                         </span>
                     </div>
                 </Button>
@@ -76,7 +91,7 @@ export function UserNotification() {
                             </div>
                             <DropdownMenuPortal>
                                 <DropdownMenuSubContent className="w-40">
-                                    <DropdownMenuItem onClick={() => console.log()}>
+                                    <DropdownMenuItem onClick={() => handleOpenChat(item, sender)}>
                                         <Navigation className="mr-2 h-4 w-4" />
                                         <span>View Chat</span>
                                     </DropdownMenuItem>
@@ -84,7 +99,7 @@ export function UserNotification() {
                                         <FileCheck className="mr-2 h-4 w-4" />
                                         <span>Mark as Read</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => console.log()}>
+                                    <DropdownMenuItem onClick={() => removeNotification(item.id)}>
                                         <FileX className="mr-2 h-4 w-4" />
                                         <span>Remove</span>
                                     </DropdownMenuItem>
@@ -95,7 +110,7 @@ export function UserNotification() {
                     )
                 }) : (<><p>You have no Notifications</p></>)}
 
-                {notifications.length > 0 && <Button className="w-full" size={"sm"} variant={"secondary"} onClick={() => { setOpen(false); clearNotifications() }}>Mark all as Read</Button>}
+                {notifications.length > 0 && <Button className="w-full" size={"sm"} variant={"secondary"} onClick={() => { setOpen(false); clearNotifications() }}>Clear All</Button>}
             </DropdownMenuContent>
         </DropdownMenu>
     );

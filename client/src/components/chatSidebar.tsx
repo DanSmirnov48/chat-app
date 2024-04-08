@@ -88,7 +88,7 @@ export default function ChatSidebar() {
                                     }
 
                                     const latestMessage = chat.Message[chat.Message.length - 1];
-                                    const isSelf = latestMessage.senderId === user.id;
+                                    const isSelf = latestMessage && latestMessage.senderId === user.id;
 
                                     return (
                                         <div key={recepient.id}>
@@ -97,7 +97,7 @@ export default function ChatSidebar() {
                                                     <Avatar className="h-[50px] w-[50px]">
                                                         <AvatarImage src={"/avatar.png"} />
                                                     </Avatar>
-                                                    <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-white`}></div>
+                                                    <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-accent`}></div>
                                                 </div>
                                                 <div className='flex flex-col w-full h-[43px]'>
                                                     <div className="flex flex-col h-full">

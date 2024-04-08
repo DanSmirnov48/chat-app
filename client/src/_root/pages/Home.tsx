@@ -37,43 +37,78 @@ const home = () => {
         setOnlineUsers(res);
       });
 
+      // Clean up event listeners
+      return () => { socket.off("getOnlineUsers") };
+    }
+  }, [socket, isAuthenticated, selectedChatId]);
+
+  useEffect(() => {
+    if (socket && isAuthenticated) {
       // Listen for "getNotification" event
       socket.on("getNotification", async (res: INotification) => {
-        console.log(res)
-        refetchChats();
+        console.log(`Recieving 'getNotification' Socket event: ${res}`)
         if (res.chatId === selectedChatId) {
           addNotification({ ...res, isRead: true });
-          const updateRes = await updateMessageStatus({
-            messageId: res.messageId,
-            newStatus: MessageStatus.READ
-          })
-          console.log(updateRes)
+          selectedChatId && refetchMessages();
         } else {
           addNotification(res);
           new Audio('/notification-2870.wav').play();
         }
-      });
-
-      // Listen for "getMessage" event
-      socket.on("getMessage", async (res: getMessage) => {
-        console.log(res)
-        const updateRes = await updateMessageStatus({
-          messageId: res.messageId,
-          newStatus: MessageStatus.DELIVERED
-        })
-        console.log(updateRes)
-        selectedChatId && refetchMessages();
         refetchChats();
       });
 
       // Clean up event listeners
-      return () => {
-        socket.off("getOnlineUsers");
-        socket.off("getNotification");
-        socket.off("getMessage");
-      };
+      return () => { socket.off("getNotification") };
     }
-  }, [socket, isAuthenticated]);
+  }, [socket, isAuthenticated, selectedChatId]);
+
+  useEffect(() => {
+    if (socket) {
+      // Listen for "getMessage" event
+      socket.on("getMessage", async (res: getMessage) => {
+        console.log(`Recieving 'getMessage' Socket event: ${res}`)
+        if (res.chatId === selectedChatId) {
+          await updateMessageStatus({
+            messageId: res.messageId,
+            newStatus: MessageStatus.READ
+          })
+
+          let newStatus = MessageStatus.READ as String
+          let messageId = res.messageId
+          let recipientId = res.senderId
+          socket.emit("sendMessageStatusUpdate", { messageId, recipientId, newStatus })
+
+          selectedChatId && refetchMessages();
+        } else {
+          await updateMessageStatus({
+            messageId: res.messageId,
+            newStatus: MessageStatus.DELIVERED
+          })
+
+          let newStatus = MessageStatus.DELIVERED as String
+          let messageId = res.messageId
+          let recipientId = res.senderId
+          socket.emit("sendMessageStatusUpdate", { messageId, recipientId, newStatus })
+        }
+        refetchChats();
+      });
+
+      return () => { socket.off("getMessage") };
+    }
+  }, [socket, selectedChatId]);
+
+  useEffect(() => {
+    if (socket) {
+      // Listen for "messageStatusUpdated" event
+      socket.on("getMessageStatusUpdate", async (res) => {
+        console.log("Recieving 'getMessageStatusUpdate' Socket event: ", res)
+        selectedChatId && refetchMessages();
+        refetchChats();
+      });
+
+      return () => { socket.off("getMessageStatusUpdate") };
+    }
+  }, [socket, selectedChatId]);
 
   return (
     <Shell variant={"markdown"}>
