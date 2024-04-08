@@ -30,9 +30,18 @@ io.on("connection", (socket) => {
                 senderId: message.senderId,
                 chatId: message.chatId,
                 content: message.content,
+                messageId: message.messageId,
                 isRead: false,
                 date: new Date(),
             });
+        }
+    });
+
+    socket.on("sendMessageStatusUpdate", (data) => {
+        const { messageId, newStatus, recipientId } = data;
+        const user = onlineUsers.find((user) => user.userId === recipientId)
+        if (user) {
+            io.to(user.socketId).emit("getMessageStatusUpdate", { messageId, newStatus });
         }
     });
 
