@@ -26,10 +26,12 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useUserContext, INITIAL_USER } from "@/context/AuthContext";
 import { useSignOutAccount } from "@/lib/react-query/queries/auth";
+import { useChatStore } from "@/hooks/useChat";
 
 export function UserNav() {
   const { mutate: signOut } = useSignOutAccount();
   const { user, setUser, setIsAuthenticated } = useUserContext();
+  const { setSelectedChatId, setSocket } = useChatStore();
   const { setTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -38,6 +40,10 @@ export function UserNav() {
     signOut();
     setIsAuthenticated(false);
     setUser(INITIAL_USER);
+
+    setSelectedChatId(null)
+    setSocket(null)
+  
     navigate("/");
   };
 

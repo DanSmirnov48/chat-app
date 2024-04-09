@@ -10,9 +10,12 @@ import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useSignInAccount } from "@/lib/react-query/queries/auth";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { IUser } from "@/types";
+import { IMessage, INotification, IUser } from "@/types";
 import { useUserContext } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useNotificationStore } from "@/hooks/useNotifications";
+import { useChatStore } from "@/hooks/useChat";
+import { io } from "socket.io-client";
 
 interface AuthResponse {
   status?: any;
@@ -23,6 +26,8 @@ interface AuthResponse {
     status: string
     data: {
       userWithoutPassword: IUser;
+      incomingMessages?: IMessage[] | null;
+      notifications?: INotification[] | null;
     }
   };
 }
@@ -30,6 +35,8 @@ interface AuthResponse {
 const SigninForm = () => {
 
   const navigate = useNavigate();
+  const { addNotification } = useNotificationStore();
+  const { setOnlineUsers, setSocket, onlineUsers } = useChatStore();
   const { setUser, setIsAuthenticated } = useUserContext();
 
   const [type, setType] = useState<'password' | 'text'>('password');
@@ -64,6 +71,25 @@ const SigninForm = () => {
         const user = session.data.data.userWithoutPassword as IUser
         setUser(user)
         setIsAuthenticated(true)
+
+        const newSocket = io("http://localhost:3000")
+        setSocket(newSocket)
+
+        // Set add Notifications
+        if (session.data.data.notifications) {
+          for (const notification of session.data.data.notifications) {
+            addNotification(notification);
+
+            if (onlineUsers.some(u => u.userId === notification.senderId)) {
+              let newStatus = notification.status;
+              let messageId = notification.messageId;
+              let recipientId = notification.senderId;
+              console.log("Sending 'sendMessageStatusUpdate' Socket Event", messageId, recipientId);
+              newSocket.emit("sendMessageStatusUpdate", { messageId, recipientId, newStatus });
+            }
+          }
+        }
+
         toast.success(`Nice to see you back ${user.name}`)
         navigate("/");
       }

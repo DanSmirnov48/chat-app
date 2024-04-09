@@ -47,6 +47,7 @@ export function UserNotification() {
             const messageId = item.messageId
             const newStatus = MessageStatus.READ as String
             const recipientId = item.senderId
+            console.log("Sending 'sendMessageStatusUpdate' Socket Event", messageId, recipientId)
             socket.emit("sendMessageStatusUpdate", { messageId, recipientId, newStatus })
         }
     }

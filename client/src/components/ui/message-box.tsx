@@ -23,7 +23,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const messageBoxVariants = cva("py-2 px-3 rounded-lg z-99", {
+const messageBoxVariants = cva("py-2 px-3 z-99", {
     variants: {
         align: {
             self: "col-start-4 col-end-13 p-0",
@@ -34,9 +34,9 @@ const messageBoxVariants = cva("py-2 px-3 rounded-lg z-99", {
             other: "flex flex-row items-center",
         },
         textStyle: {
-            self: "relative mr-3 bg-indigo-100",
-            other: "relative ml-3 bg-white",
-        },
+            self: "relative mr-3 bg-indigo-100 before:content-[''] before:absolute before:w-4 before:h-4 before:bg-indigo-100 before:rotate-45 before:-right-1.5 before:top-1/2 before:-translate-y-1/2",
+            other: "relative ml-3 bg-white before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rotate-45 before:-left-1.5 before:top-1/2 before:-translate-y-1/2",
+          },
     },
 });
 
@@ -55,7 +55,7 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
             <div className={messageBoxVariants({ avatar: isSelf ? "self" : "other" })}>
                 <ContextMenu>
                     <ContextMenuTrigger asChild>
-                        <div className={cn("relative text-sm py-2 px-4 shadow rounded-xl max-w-xs", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))} >
+                        <div className={cn("relative text-sm py-2 px-4 shadow rounded-lg max-w-xs", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))} >
                             <div className="mb-1 mr-14">{message.content}</div>
                             <TooltipProvider delayDuration={300}>
                                 <Tooltip>
