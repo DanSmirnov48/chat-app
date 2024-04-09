@@ -64,9 +64,9 @@ export function UserNotification() {
                     <div className="group flex items-center p-2">
                         <span className="relative inline-block mt-1">
                             <Bell aria-hidden="true" className={`w-6 h-6 text-gray-700 fill-current dark:text-light-2 ${unreadNotifications.length > 0 ? 'animate-bounce' : ''} group-hover:animate-none`} />
-                            {notifications.length > 0 && (
+                            {unreadNotifications.length > 0 && (
                                 <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1.5 text-sm font-bold leading-none text-dark-4 transform translate-x-1/2 -translate-y-1/2 bg-purple-400/70 rounded-full">
-                                    {notifications.length}
+                                    {unreadNotifications.length}
                                 </span>
                             )}
                         </span>

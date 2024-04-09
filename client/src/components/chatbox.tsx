@@ -7,10 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useUserContext } from '@/context/AuthContext'
 import { NewMessageValidation } from "@/lib/validation";
 import { MessageBox } from '@/components/ui/message-box';
-import { IMessage, INewMessage, INewMessageBase, MessageStatus } from '@/types'
+import { IMessage, INewMessageBase } from '@/types'
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useCreateNewMessage, useGetMessagesByChatId } from '@/lib/react-query/queries/messages';
-import { useGetChatByChatId, useGetChatsByUserId } from "@/lib/react-query/queries/chat";
+import { useGetChatsByUserId } from "@/lib/react-query/queries/chat";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { useChatStore } from "@/hooks/useChat";
@@ -21,6 +21,7 @@ import {
     ContextMenuShortcut,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
+import InputEmoji from "react-input-emoji";
 
 const Chatbox = () => {
     const { selectedChatId, socket, recipient, onlineUsers, setSelectedChatId } = useChatStore();
@@ -28,7 +29,6 @@ const Chatbox = () => {
     const { user } = useUserContext();
     const { mutateAsync: createNewMessage } = useCreateNewMessage()
     const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
-    const { data: currentChat } = useGetChatByChatId({ chatId: selectedChatId ?? "" });
     const { data: getMessages, isLoading: chatMessagesLoading } = useGetMessagesByChatId({ chatId: selectedChatId ?? "" });
 
     const isOnline = onlineUsers.find((u) => u.userId === recipient!.id);
@@ -51,15 +51,16 @@ const Chatbox = () => {
             const res = await createNewMessage(newMessage)
             console.log(res)
             if (res && res.status === 201) {
-                //@ts-ignore
-                const messageId = res.data.id
-                const recipientId = currentChat?.data.members?.find((id: string) => id !== user.id)
-
-                console.log(`Sending 'sendMessage' Socket event to ${recipientId}`)
-                socket.emit("sendMessage", { ...newMessage, messageId, recipientId })
-
                 form.reset()
                 refetchChats() // update the chats list in the sidebar
+
+                if (recipient && isOnline) {
+                    //@ts-ignore
+                    const messageId = res.data.id
+                    const recipientId = recipient.id
+                    console.log(`Sending 'sendMessage' Socket event to ${recipientId}`)
+                    socket.emit("sendMessage", { ...newMessage, messageId, recipientId })
+                }
             } else {
                 console.log(res)
             }
@@ -113,23 +114,20 @@ const Chatbox = () => {
                                     render={({ field }) => (
                                         <FormItem className="w-full">
                                             <FormControl>
-                                                <div className="relative w-full">
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="Type a message"
-                                                        className="px-4 py-2 h-12"
-                                                        {...field}
-
-                                                    />
-                                                    <Smile className='w-6 h-6 cursor-pointer absolute flex items-center justify-center right-3 top-3 text-gray-400 hover:text-gray-600' />
-                                                </div>
+                                                <InputEmoji
+                                                    shouldReturn={false}
+                                                    shouldConvertEmojiToImage={false}
+                                                    placeholder="Type a message"
+                                                    borderRadius={12}
+                                                    {...field}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                             </div>
-                            <Button type="submit" className="flex-shrink-0 h-12">
+                            <Button type="submit" className="flex-shrink-0 h-10">
                                 Send
                                 <Send className='w-5 h-5 ml-2' />
                             </Button>
