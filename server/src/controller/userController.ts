@@ -3,14 +3,28 @@ import asyncHandler from "../middlewares/asyncHandler";
 import { findUserByEmail, createUser, findUserById, getAllUSers } from "../../prisma/user";
 import validator from "validator";
 import jwt, { Secret, VerifyOptions } from "jsonwebtoken";
-import { User } from "@prisma/client";
+import { Chat, Message, MessageStatus, User } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 import { promisify } from 'util';
+import { findChatsByUser } from "../../prisma/chats";
+import { findByChatId, updateStatus } from "../../prisma/message";
+import { v4 as uuidv4 } from 'uuid';
 
 interface DecodedToken {
     id: string;
     iat: number;
     exp: number;
+}
+
+type Notification = {
+    id: string;
+    status: MessageStatus;
+    senderId: string;
+    chatId: string;
+    content: string;
+    messageId: string;
+    isRead: boolean;
+    date: Date;
 }
 
 const signToken = (id: string, secret: string, expiresIn: string | number) => {
@@ -29,7 +43,7 @@ const verifyToken = async (token: string, secret: Secret): Promise<DecodedToken>
     return await verifyAsync(token, secret, {});
 }
 
-const createSendToken = (user: User, statusCode: number, req: Request, res: Response) => {
+const createSendToken = (user: User, statusCode: number, req: Request, res: Response, incomingMessages?: Message[], notifications?: Notification[]) => {
     const accessToken = signToken(user.id.toString(), process.env.JWT_SECRET!, process.env.JWT_EXPIRES_IN!);
 
     const accessExpires = 24 * 60 * 60 * 1000; // 24 hours
@@ -48,7 +62,9 @@ const createSendToken = (user: User, statusCode: number, req: Request, res: Resp
         status: 'success',
         accessToken,
         data: {
-            userWithoutPassword
+            userWithoutPassword,
+            incomingMessages,
+            notifications
         }
     }).end();
 };
@@ -100,16 +116,55 @@ export const logIn = asyncHandler(async (req: Request, res: Response) => {
         const user = await findUserByEmail({ email: email });
         console.log({ user })
 
-        // if (!user || !(await bcrypt.compare(password, user?.password))) {
-        //     return res.status(401).json({ error: 'Incorrect email or password' });
-        // }
+        if (user) {
+            // if (!user || !(await bcrypt.compare(password, user.password))) {
+            //     return res.status(401).json({ error: 'Incorrect email or password' });
+            // }
 
-        createSendToken(user!, 200, req, res);
+            const { incomingMessages, notifications } = await processIncomingMessages(user);
+
+            createSendToken(user, 200, req, res, incomingMessages, notifications);
+        }
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching the author.' });
     }
 });
+
+async function processIncomingMessages(user: User): Promise<{ incomingMessages: Message[], notifications: Notification[] }> {
+    const userChats: Chat[] = await findChatsByUser(user.id);
+    const incomingMessages: Message[] = [];
+    const notifications: Notification[] = [];
+
+    for (const chat of userChats) {
+        const chatMessages = await findByChatId(chat.id);
+        const messages = chatMessages.filter(message => {
+            return message.senderId !== user.id
+                && (message.status !== MessageStatus.READ && message.status !== MessageStatus.DELIVERED);
+        });
+
+        for (const message of messages) {
+            await updateStatus(message.id, MessageStatus.DELIVERED);
+            message.status = MessageStatus.DELIVERED;
+            incomingMessages.push(message);
+
+            const notification: Notification = {
+                id: uuidv4(),
+                status: message.status,
+                senderId: message.senderId,
+                chatId: message.chatId,
+                content: message.content,
+                messageId: message.id,
+                isRead: false,
+                date: message.createdAt,
+            };
+            notifications.push(notification);
+        }
+    }
+
+    return { incomingMessages, notifications };
+}
 
 export const logout = (req: Request, res: Response) => {
     res.clearCookie("accessToken");
