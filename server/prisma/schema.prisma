@@ -17,6 +17,8 @@ model User {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String    @unique
+  image     Image?
+  bio       String?
   password  String
   members   String[]  @db.ObjectId
   chats     Chat[]    @relation(fields: [members], references: [id])
@@ -44,6 +46,12 @@ model Message {
   status    MessageStatus @default(SENDING)
   createdAt DateTime      @default(now()) @map(name: "created_at")
   updatedAt DateTime      @default(now()) @map(name: "updated_at")
+}
+
+type Image {
+  key  String
+  name String
+  url  String
 }
 
 enum MessageStatus {

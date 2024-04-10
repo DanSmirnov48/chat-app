@@ -7,6 +7,8 @@ import userRouter from './routes/userRoute';
 import chatRouter from './routes/chatRoute';
 import messageRouter from './routes/messageRoute';
 import type { User } from '@prisma/client';
+import { createRouteHandler } from "uploadthing/express";
+import { uploadRouter } from "./uploadthing";
 
 config()
 connectDB()
@@ -31,6 +33,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use('/api/users', userRouter);
 app.use('/api/chats', chatRouter);
 app.use('/api/messages', messageRouter);
+app.use("/api/uploadthing", createRouteHandler({ router: uploadRouter }));
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

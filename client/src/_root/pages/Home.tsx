@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { io } from 'socket.io-client'
 import { Shell } from '@/components/shell'
 import Chatbox from '@/components/chatbox';
@@ -10,6 +10,11 @@ import { getMessage, INotification, MessageStatus } from '@/types'
 import { useGetChatsByUserId } from '@/lib/react-query/queries/chat';
 import { useGetMessagesByChatId, useUpdateMessageStatus } from '@/lib/react-query/queries/messages';
 
+import { useDropzone } from "@uploadthing/react";
+import { generateClientDropzoneAccept } from "uploadthing/client";
+
+import { useUploadThing } from "@/utils/uploadthing";
+
 const home = () => {
   const { user, isAuthenticated } = useUserContext();
   const { addNotification } = useNotificationStore();
@@ -17,6 +22,26 @@ const home = () => {
   const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
   const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
   const { mutateAsync: updateMessageStatus } = useUpdateMessageStatus()
+
+  const [files, setFiles] = useState<File[]>([]);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setFiles(acceptedFiles);
+  }, []);
+
+  const { startUpload, permittedFileInfo, } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (data) => { console.log(data) },
+    onUploadError: (error: Error) => { console.log(error) },
+    onUploadBegin: (fileName: string) => { console.log("upload started for ", fileName) },
+  });
+
+  const fileTypes = permittedFileInfo?.config ? Object.keys(permittedFileInfo?.config) : [];
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: fileTypes ? generateClientDropzoneAccept(fileTypes) : undefined,
+    maxFiles: 1
+  });
 
   useEffect(() => {
     if (isAuthenticated && !socket) {
@@ -122,6 +147,17 @@ const home = () => {
                 <div className="font-bold text-2xl">ChatApp</div>
               </div>
               <p>Select a contact from your active conversations to start chatting.</p>
+            <div {...getRootProps()}>
+              <input {...getInputProps()} />
+              <div>
+                {files.length > 0 && (
+                  <button onClick={() => startUpload(files)}>
+                    Upload {files.length} files
+                  </button>
+                )}
+              </div>
+              Drop files here!
+            </div>
             </div>
           </div>
         }
