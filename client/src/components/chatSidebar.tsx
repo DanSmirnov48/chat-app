@@ -1,6 +1,6 @@
 import { format, isToday } from 'date-fns';
 import { useChatStore } from '@/hooks/useChat';
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Settings } from "lucide-react";
 import { useUserContext } from '@/context/AuthContext'
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
@@ -9,6 +9,17 @@ import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries
 import { useNotificationStore } from '@/hooks/useNotifications';
 import { useUpdateMessageStatus } from '@/lib/react-query/queries/messages';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import UserProfileForm from './userProfileForm';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Button } from './ui/button';
 
 export default function ChatSidebar() {
     const { user } = useUserContext();
@@ -77,7 +88,25 @@ export default function ChatSidebar() {
                             <div className="ml-2 font-bold text-2xl">ChatApp</div>
                         </div>
                         {/*  User Profile */}
-                        <div className="flex flex-col items-center bg-indigo-100 border border-gray-200 my-4 w-full py-6 px-4 rounded-lg">
+
+                        <div className="flex flex-col items-center bg-indigo-100 border border-gray-200 my-4 w-full py-6 px-4 rounded-lg relative">
+                            <Dialog>
+                                <DialogTrigger asChild className='absolute top-2 right-2'>
+                                    <Button variant="link">
+                                        <Settings />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="p-10">
+                                    <DialogHeader>
+                                        <DialogTitle>Edit profile</DialogTitle>
+                                        <DialogDescription>
+                                            Make changes to your profile here. Click save when you're done.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <UserProfileForm />
+                                </DialogContent>
+                            </Dialog>
+
                             <div className="h-20 w-20 rounded-full border overflow-hidden">
                                 <Avatar className="h-full w-full">
                                     <AvatarImage src={"/avatar.png"} />

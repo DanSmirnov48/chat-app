@@ -4,8 +4,16 @@ export type IUser = {
     id: string;
     name: string;
     email: string;
+    bio: string;
+    image: UserImage;
     createdAt: string;
     updatedAt: string;
+};
+
+export type UserImage = {
+    key: string;
+    name: string;
+    url: string;
 };
 
 export type INewUser = {
