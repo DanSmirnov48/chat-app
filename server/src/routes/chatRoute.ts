@@ -1,11 +1,12 @@
 import express from 'express';
 import { createChat, findChatByChatId, findChatById, findUserChat } from '../controller/chatController';
+import { protect } from '../controller/userController';
 
 const router = express.Router();
 
-router.post("/", createChat);
-router.get("/find", findChatById);
-router.get("/findById/:chatId", findChatByChatId);
-router.get("/:userId", findUserChat);
+router.post("/", protect, createChat);
+router.get("/find", protect, findChatById);
+router.get("/findById/:chatId", protect, findChatByChatId);
+router.get("/:userId", protect, findUserChat);
 
 export default router;

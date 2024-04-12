@@ -4,6 +4,7 @@ import {
     findUser,
     logIn,
     logout,
+    protect,
     signup,
     updateUserDetails,
     validate,
@@ -19,6 +20,6 @@ router.route("/validate").get(validate);
 router.get("/find:userId", findUser);
 router.get("/", findAll);
 
-router.route("/update-me").patch(updateUserDetails);
+router.route("/update-me").patch(protect, updateUserDetails);
 
 export default router;

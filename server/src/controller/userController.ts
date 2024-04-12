@@ -1,20 +1,13 @@
-import express, { NextFunction, Request, Response } from "express";
-import asyncHandler from "../middlewares/asyncHandler";
-import { findUserByEmail, createUser, findUserById, getAllUSers, updateDetails } from "../../prisma/user";
-import validator from "validator";
-import jwt, { Secret, VerifyOptions } from "jsonwebtoken";
-import { Chat, Image, Message, MessageStatus, User } from "@prisma/client";
-import * as bcrypt from 'bcrypt';
 import { promisify } from 'util';
-import { findChatsByUser } from "../../prisma/chats";
-import { findByChatId, updateStatus } from "../../prisma/message";
+import validator from "validator";
 import { v4 as uuidv4 } from 'uuid';
-
-interface DecodedToken {
-    id: string;
-    iat: number;
-    exp: number;
-}
+import { findChatsByUser } from "../../prisma/chats";
+import asyncHandler from "../middlewares/asyncHandler";
+import { NextFunction, Request, Response } from "express";
+import jwt, { Secret, VerifyOptions } from "jsonwebtoken";
+import { findByChatId, updateStatus } from "../../prisma/message";
+import { Chat, Image, Message, MessageStatus, User } from "@prisma/client";
+import { findUserByEmail, createUser, findUserById, getAllUsers, updateDetails } from "../../prisma/user";
 
 type Notification = {
     id: string;
@@ -43,7 +36,14 @@ const verifyToken = async (token: string, secret: Secret): Promise<DecodedToken>
     return await verifyAsync(token, secret, {});
 }
 
-const createSendToken = (user: User, statusCode: number, req: Request, res: Response, incomingMessages?: Message[], notifications?: Notification[]) => {
+const createSendToken = (
+    user: User,
+    statusCode: number,
+    req: Request,
+    res: Response,
+    incomingMessages?: Message[],
+    notifications?: Notification[]
+) => {
     const accessToken = signToken(user.id.toString(), process.env.JWT_SECRET!, process.env.JWT_EXPIRES_IN!);
 
     const accessExpires = 24 * 60 * 60 * 1000; // 24 hours
@@ -56,6 +56,9 @@ const createSendToken = (user: User, statusCode: number, req: Request, res: Resp
         sameSite: 'strict',
     });
 
+    // Set the user object to the res.locals
+    res.locals.user = user;
+
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(statusCode).json({
@@ -64,71 +67,109 @@ const createSendToken = (user: User, statusCode: number, req: Request, res: Resp
         data: {
             userWithoutPassword,
             incomingMessages,
-            notifications
-        }
+            notifications,
+        },
     }).end();
 };
 
-export const signup = asyncHandler(async (req: Request, res: Response) => {
+export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // Check if the user object is present in res.locals
+    if (req.locals.user) {
+        // User object is present, continue to the next middleware
+        next();
+    } else {
+        // Check if the accessToken cookie is present
+        const accessToken = req.cookies.accessToken;
+        if (accessToken) {
+            try {
+                // Verify the token and extract the user ID
+                const decodedToken = await verifyToken(accessToken, process.env.JWT_SECRET!);
+                // Find the user by the user ID
+                const user = await findUserById({ id: decodedToken.userId });
+                if (user) {
+                    // Set the user object in req.locals
+                    req.locals.user = user;
+                    // Continue to the next middleware
+                    next();
+                } else {
+                    // User not found, send a 401 Unauthorized response
+                    res.status(401).json({ error: 'Unauthorized' });
+                }
+            } catch (error) {
+                // Error verifying the token, send an error
+                res.status(401).json({ error: 'Unauthorized' });
+            }
+        } else {
+            // No accessToken, send an error
+            res.status(401).json({ error: 'Unauthorized' });
+        }
+    }
+});
 
+export const signup = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const name: string | null = req.body.name ?? null;
     const email: string | null = req.body.email ?? null;
     const password: string | null = req.body.password ?? null;
 
     if (!name || name.length < 3 || name.length > 31) {
-        return res.status(400).json("Invalid password").end();
+        res.status(400).json("Invalid password").end();
+        return; // Return here to exit the function
     }
+
     if (!email || typeof email !== "string" || !validator.isEmail(email)) {
-        return res.status(400).json("Invalid Email").end();
+        res.status(400).json("Invalid Email").end();
+        return; // Return here to exit the function
     }
+
     if (!password || password.length < 6 || password.length > 255) {
-        return res.status(400).json("Invalid password").end();
+        res.status(400).json("Invalid password").end();
+        return; // Return here to exit the function
     }
 
     try {
         const user = await findUserByEmail({ email: email });
         if (user) {
-            return res.status(404).json({ error: 'Email not availiable' });
+            res.status(404).json({ error: 'Email not available' });
+            return; // Return here to exit the function
         }
 
         const createdAUser = await createUser({ name, email, password });
-        return res.status(201).json({ user: createdAUser }).end();
-
+        res.status(201).json({ user: createdAUser }).end();
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });
 
-export const logIn = asyncHandler(async (req: Request, res: Response) => {
-
+export const logIn = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const email: string | null = req.body.email ?? null;
     const password: string | null = req.body.password ?? null;
 
     if (!email || typeof email !== "string" || !validator.isEmail(email)) {
-        return res.status(400).json("Invalid Email").end();
+        res.status(400).json("Invalid Email").end();
+        return;
     }
+
     if (!password || password.length < 6 || password.length > 255) {
-        return res.status(400).json("Invalid password").end();
+        res.status(400).json("Invalid password").end();
+        return;
     }
 
     try {
         const user = await findUserByEmail({ email: email });
-        console.log({ user })
+        console.log({ user });
 
         if (user) {
             // if (!user || !(await bcrypt.compare(password, user.password))) {
-            //     return res.status(401).json({ error: 'Incorrect email or password' });
+            //   return res.status(401).json({ error: 'Incorrect email or password' });
             // }
-
             const { incomingMessages, notifications } = await processIncomingMessages(user);
 
             createSendToken(user, 200, req, res, incomingMessages, notifications);
         }
-
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });
 
@@ -180,14 +221,16 @@ export const validate = asyncHandler(async (req: Request, res: Response, next: N
             const decodedToken: DecodedToken = await verifyToken(accessToken, process.env.JWT_SECRET as string);
             console.log('Decoded token:', decodedToken);
 
-            const user = await findUserById({ id: decodedToken.id });
+            const user = await findUserById({ id: decodedToken.userId });
 
             if (!user) {
-                return res.status(401).json({ error: 'Invalid token - user not found' });
+                res.status(401).json({ error: 'Invalid token - user not found' });
+                return;
             }
 
             res.locals.user = user;
-            return res.status(200).json({
+
+            res.status(200).json({
                 status: 'success',
                 accessToken,
                 data: {
@@ -196,63 +239,53 @@ export const validate = asyncHandler(async (req: Request, res: Response, next: N
             }).end();
         } catch (error) {
             console.error('Access Token Verification Error:', error);
-            return res.status(401).json({ error: 'Invalid access token' });
+            res.status(401).json({ error: 'Invalid access token' });
         }
+    } else {
+        res.status(401).json({ error: 'No access token provided' });
     }
 });
 
-export const findUser = asyncHandler(async (req: Request, res: Response) => {
+export const findUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
-
-    if (!id || typeof id !== "string") {
-        return res.status(400).json("Invalid User ID").end();
+    if (!id || typeof id !== 'string') {
+        res.status(400).json('Invalid User ID').end();
+        return;
     }
-
     try {
-        const user = await findUserById({ id: id });
-
-        return res.status(200).json({ user: user }).end();
-
+        const user = await findUserById({ id });
+        res.status(200).json({ user }).end();
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        res.status(500).json({ error: 'An error occurred while fetching the user.' });
     }
 });
 
-export const findAll = asyncHandler(async (req: Request, res: Response) => {
-
+export const findAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const users = await getAllUSers();
-
-        return res.status(200).json({ users }).end();
-
+        const users = await getAllUsers();
+        res.status(200).json({ users }).end();
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        res.status(500).json({ error: 'An error occurred while fetching the users.' });
     }
 });
 
-export const updateUserDetails = asyncHandler(async (req: Request, res: Response) => {
-
+export const updateUserDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const name: string | null = req.body.name ?? null;
     const bio: string | null = req.body.bio ?? null;
     const image: Image | null = req.body.image ?? null;
 
-    const userId = '6612fee5d0a20c6eacfc86c0'
-
-    try {
-        const user = await updateDetails({
-            id: userId,
-            name,
-            bio,
-            image,
-        });
-
-        return res.status(200).json({ user }).end();
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+    const userId = req.locals.user?.id;
+    if (userId) {
+        try {
+            const user = await updateDetails({ id: userId, name, bio, image });
+            res.status(200).json({ user }).end();
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'An error occurred while updating the user details.' });
+        }
+    } else {
+        res.status(401).json({ error: 'Unauthorized' });
     }
-
 });

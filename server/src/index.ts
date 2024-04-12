@@ -41,8 +41,18 @@ app.listen(port, () => {
 
 declare global {
     namespace Express {
-        interface Locals {
-            user: User | null;
+        interface Request {
+            locals: {
+                user: User | null;
+            };
         }
+    }
+}
+
+declare global {
+    interface DecodedToken {
+        userId: string;
+        iat: number;
+        exp: number;
     }
 }

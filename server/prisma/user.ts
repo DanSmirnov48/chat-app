@@ -58,7 +58,7 @@ export const findUserById = async ({ id }: { id: User["id"] }) => {
     return author;
 };
 
-export const getAllUSers = async () => {
+export const getAllUsers = async () => {
     const author = await prisma.user.findMany();
 
     return author;
