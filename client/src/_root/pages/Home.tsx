@@ -110,6 +110,19 @@ const home = () => {
     }
   }, [socket, selectedChatId]);
 
+  useEffect(() => {
+    if (socket) {
+      // Listen for "messageDelete" event
+      socket.on("getMessageDeleted", async (res) => {
+        console.log("Recieving 'getMessageDeleted' Socket event: ", res)
+        selectedChatId && refetchMessages();
+        refetchChats();
+      });
+
+      return () => { socket.off("getMessageDeleted") };
+    }
+  }, [socket, selectedChatId]);
+
   return (
     <Shell variant={"markdown"}>
       <div className="flex h-full gap-2">

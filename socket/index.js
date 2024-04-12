@@ -45,6 +45,14 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("sendMessageDeleted", (data) => {
+        const { messageId, chatId, recipientId } = data;
+        const user = onlineUsers.find((user) => user.userId === recipientId)
+        if (user) {
+            io.to(user.socketId).emit("getMessageDeleted", { messageId, chatId });
+        }
+    });
+
     socket.on("disconnect", () => {
         onlineUsers = onlineUsers.filter(user => user.socketId !== socket.id);
         io.emit("getOnlineUsers", onlineUsers);

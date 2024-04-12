@@ -58,15 +58,26 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
     const { mutateAsync: deleteMessage } = useDeleteMessage()
 
     const { user } = useUserContext();
-    const { selectedChatId } = useChatStore();
+    const { selectedChatId, onlineUsers, recipient, socket } = useChatStore();
     const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
     const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
 
     async function handleDeleteMessage(message: IMessage) {
-        const res = await deleteMessage(message.id)
-        if (res.status === 200) {
-            selectedChatId && refetchMessages();
-            refetchChats();
+        if (message.senderId !== user.id) {
+            const res = await deleteMessage(message.id)
+            if (res.status === 200) {
+                selectedChatId && refetchMessages();
+                refetchChats();
+
+                const isOnline = onlineUsers.find((u) => u.userId === recipient!.id);
+                if (recipient && isOnline && socket) {
+                    // @ts-ignore
+                    const { id: messageId, chatId } = res.data
+                    const recipientId = recipient.id
+                    console.log(`Sending 'sendMessageDeleted' Socket event to ${recipientId}`)
+                    socket.emit("sendMessageDeleted", { chatId, messageId, recipientId })
+                }
+            }
         }
     }
 
@@ -106,10 +117,10 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
                             Forward
                             <ContextMenuShortcut>⌘]</ContextMenuShortcut>
                         </ContextMenuItem>
-                        <ContextMenuItem inset onClick={() => handleDeleteMessage(message)}>
+                        {(message.senderId === user.id) && <ContextMenuItem inset onClick={() => handleDeleteMessage(message)}>
                             Delete Message
                             <ContextMenuShortcut>⌘D</ContextMenuShortcut>
-                        </ContextMenuItem>
+                        </ContextMenuItem>}
                         <ContextMenuSub>
                             <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
                             <ContextMenuSubContent className="w-48">
