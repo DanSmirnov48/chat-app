@@ -22,6 +22,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useDeleteMessage, useGetMessagesByChatId } from "@/lib/react-query/queries/messages";
+import { useGetChatsByUserId } from "@/lib/react-query/queries/chat";
+import { useChatStore } from "@/hooks/useChat";
+import { useUserContext } from "@/context/AuthContext";
 
 const messageBoxVariants = cva("py-2 px-3 z-99", {
     variants: {
@@ -36,7 +40,7 @@ const messageBoxVariants = cva("py-2 px-3 z-99", {
         textStyle: {
             self: "relative mr-3 bg-indigo-100 before:content-[''] before:absolute before:w-4 before:h-4 before:bg-indigo-100 before:rotate-45 before:-right-1.5 before:top-1/2 before:-translate-y-1/2",
             other: "relative ml-3 bg-white before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rotate-45 before:-left-1.5 before:top-1/2 before:-translate-y-1/2",
-          },
+        },
     },
 });
 
@@ -50,6 +54,22 @@ interface MessageBoxProps
 const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, message, isSelf, ...props }, ref) => {
     const formattedTime = format(new Date(message.createdAt), "HH:mm");
     const fullDate = format(new Date(message.createdAt), "dd/MM/yyyy HH:mm");
+
+    const { mutateAsync: deleteMessage } = useDeleteMessage()
+
+    const { user } = useUserContext();
+    const { selectedChatId } = useChatStore();
+    const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
+    const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
+
+    async function handleDeleteMessage(message: IMessage) {
+        const res = await deleteMessage(message.id)
+        if (res.status === 200) {
+            selectedChatId && refetchMessages();
+            refetchChats();
+        }
+    }
+
     return (
         <div className={cn(messageBoxVariants({ align: isSelf ? "self" : "other", ...props }), className)} ref={ref}{...props}>
             <div className={messageBoxVariants({ avatar: isSelf ? "self" : "other" })}>
@@ -86,9 +106,9 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
                             Forward
                             <ContextMenuShortcut>⌘]</ContextMenuShortcut>
                         </ContextMenuItem>
-                        <ContextMenuItem inset>
-                            Reload
-                            <ContextMenuShortcut>⌘R</ContextMenuShortcut>
+                        <ContextMenuItem inset onClick={() => handleDeleteMessage(message)}>
+                            Delete Message
+                            <ContextMenuShortcut>⌘D</ContextMenuShortcut>
                         </ContextMenuItem>
                         <ContextMenuSub>
                             <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>

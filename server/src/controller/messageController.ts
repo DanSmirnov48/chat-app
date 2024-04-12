@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import asyncHandler from "../middlewares/asyncHandler";
-import { create, findByChatId, updateStatus } from "../../prisma/message";
+import { create, deleteById, findByChatId, updateStatus } from "../../prisma/message";
 import { Message, MessageStatus } from "@prisma/client";
 
 export const createMessage = asyncHandler(async (req: Request, res: Response) => {
@@ -63,6 +63,24 @@ export const updateMessageStatus = asyncHandler(async (req: Request, res: Respon
     try {
         await updateStatus(messageId, newStatus as MessageStatus)
         return res.status(200).json({ status: 'success' }).end();
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+    }
+});
+
+export const deleteMessageById = asyncHandler(async (req: Request, res: Response) => {
+
+    const messageId: string | null = req.params.id ?? null;
+
+    if (!messageId) {
+        return res.status(400).json("Invalid Message Id").end();
+    }
+
+    try {
+        const message = await deleteById(messageId)
+        return res.status(200).json(message).end();
 
     } catch (error) {
         console.error(error);

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "../queryKeys";
-import { createMessage, getMessagesByChatId, updateMessageStatus } from "@/lib/backend-api/messages";
+import { createMessage, deleteMessage, getMessagesByChatId, updateMessageStatus } from "@/lib/backend-api/messages";
 import { IMessage, INewMessageBase, MessageStatus } from "@/types";
 
 // ============================================================
@@ -47,5 +47,11 @@ export const updateChatMessages = (chatId: string, newMessage: IMessage) => {
 export const useUpdateMessageStatus = () => {
     return useMutation({
         mutationFn: (data: { messageId: IMessage['id'], newStatus: MessageStatus }) => updateMessageStatus(data),
+    });
+};
+
+export const useDeleteMessage = () => {
+    return useMutation({
+        mutationFn: (id: IMessage['id']) => deleteMessage(id),
     });
 };

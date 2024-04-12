@@ -47,3 +47,18 @@ export async function updateStatus(messageId: string, newStatus: MessageStatus):
         throw new Error(`Error updating message status: ${error}`);
     }
 }
+
+export async function deleteById(messageId: string): Promise<Message> {
+    try {
+        const deletedMessage = await prisma.message.delete({
+            where: {
+                id: messageId,
+            },
+        });
+
+        return deletedMessage;
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        throw new Error('An error occurred while deleting the message.');
+    }
+}
