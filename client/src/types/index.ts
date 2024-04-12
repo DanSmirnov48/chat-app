@@ -4,8 +4,8 @@ export type IUser = {
     id: string;
     name: string;
     email: string;
-    bio: string;
-    image: UserImage;
+    bio?: string;
+    image?: UserImage;
     createdAt: string;
     updatedAt: string;
 };

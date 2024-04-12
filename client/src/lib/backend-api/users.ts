@@ -1,4 +1,4 @@
-import { INewUser } from "@/types";
+import { INewUser, UserImage } from "@/types";
 import axios from "axios";
 
 // ============================================================
@@ -62,5 +62,20 @@ export async function getAllUsers() {
         return response
     } catch (error) {
         console.log(error);
+    }
+}
+
+export async function updateMyAccount(user: { name: string; bio?: string; image?: UserImage }) {
+    try {
+        const response = await axios.patch(`/api/users/update-me`, user);
+        return response;
+    } catch (error: any) {
+        if (error.response) {
+            return { error: error.response.data, status: error.response.status };
+        } else if (error.request) {
+            return { error: 'No response from the server', status: 500 };
+        } else {
+            return { error: 'An unexpected error occurred', status: 500 };
+        }
     }
 }

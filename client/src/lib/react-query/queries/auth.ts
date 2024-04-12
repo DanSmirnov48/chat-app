@@ -1,5 +1,5 @@
-import { createUserAccount, getAllUsers, getUserSession, signInAccount, signOutAccount } from "@/lib/backend-api/users";
-import { INewUser } from "@/types";
+import { createUserAccount, getAllUsers, getUserSession, signInAccount, signOutAccount, updateMyAccount } from "@/lib/backend-api/users";
+import { INewUser, UserImage } from "@/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "../queryKeys";
 
@@ -39,5 +39,11 @@ export const useGetAllUsers = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_ALL_USERS],
         queryFn: () => getAllUsers(),
+    });
+};
+
+export const useUpdateMyAccount = () => {
+    return useMutation({
+        mutationFn: (user: { name: string; bio?: string; image?: UserImage }) => updateMyAccount(user),
     });
 };

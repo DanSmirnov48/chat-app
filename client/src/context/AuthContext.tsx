@@ -27,7 +27,13 @@ export const INITIAL_USER: IUser = {
     name: '',
     email: '',
     createdAt: '',
-    updatedAt: ''
+    updatedAt: '',
+    bio: '',
+    image: {
+        key: '',
+        name: '',
+        url: '',
+    },
 };
 
 const INITIAL_STATE = {
@@ -73,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     email: data.data.user.email,
                     createdAt: data.data.user.createdAt,
                     updatedAt: data.data.user.updatedAt,
+                    bio: data.data.user.bio,
+                    image: data.data.user.image,
                 })
                 setIsAuthenticated(true);
                 return true;
