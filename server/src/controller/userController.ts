@@ -1,9 +1,9 @@
 import express, { NextFunction, Request, Response } from "express";
 import asyncHandler from "../middlewares/asyncHandler";
-import { findUserByEmail, createUser, findUserById, getAllUSers } from "../../prisma/user";
+import { findUserByEmail, createUser, findUserById, getAllUSers, updateDetails } from "../../prisma/user";
 import validator from "validator";
 import jwt, { Secret, VerifyOptions } from "jsonwebtoken";
-import { Chat, Message, MessageStatus, User } from "@prisma/client";
+import { Chat, Image, Message, MessageStatus, User } from "@prisma/client";
 import * as bcrypt from 'bcrypt';
 import { promisify } from 'util';
 import { findChatsByUser } from "../../prisma/chats";
@@ -230,4 +230,29 @@ export const findAll = asyncHandler(async (req: Request, res: Response) => {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching the author.' });
     }
+});
+
+export const updateUserDetails = asyncHandler(async (req: Request, res: Response) => {
+
+    const name: string | null = req.body.name ?? null;
+    const bio: string | null = req.body.bio ?? null;
+    const image: Image | null = req.body.image ?? null;
+
+    const userId = '6612fee5d0a20c6eacfc86c0'
+
+    try {
+        const user = await updateDetails({
+            id: userId,
+            name,
+            bio,
+            image,
+        });
+
+        return res.status(200).json({ user }).end();
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+    }
+
 });
