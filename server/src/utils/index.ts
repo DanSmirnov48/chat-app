@@ -4,6 +4,7 @@ import { findChatsByUser } from "../../prisma/chats";
 import jwt, { Secret, VerifyOptions } from "jsonwebtoken";
 import { findByChatId, updateStatus } from "../../prisma/message";
 import { Chat, Message, MessageStatus, User } from "@prisma/client";
+import { findUserById } from '../../prisma/user';
 
 export type Notification = {
     id: string;
@@ -70,4 +71,32 @@ export const signToken = (id: string, secret: string, expiresIn: string | number
     return jwt.sign({ id }, secret, {
         expiresIn,
     });
+};
+
+export const readSessionCookie = (token: string): string | undefined => {
+    if (token) {
+        const cookies = token.split(';');
+        const accessTokenCookie = cookies.find(cookie => cookie.trim().startsWith('accessToken='));
+        if (accessTokenCookie) {
+            const accessToken = accessTokenCookie.split('=')[1];
+            return accessToken;
+        }
+    }
+    return undefined;
+};
+
+export const validateSession = async (accessToken: string): Promise<User | null> => {
+    if (accessToken) {
+        try {
+            const decodedToken: DecodedToken = await verifyToken(accessToken, process.env.JWT_SECRET as string);
+            if (decodedToken) {
+                const user = await findUserById({ id: decodedToken.id });
+                return user;
+            }
+        } catch (error) {
+            console.error('Error validating session:', error);
+            return null;
+        }
+    }
+    return null;
 };

@@ -2,8 +2,8 @@ import validator from "validator";
 import { Message, User } from "@prisma/client";
 import asyncHandler from "../middlewares/asyncHandler";
 import { NextFunction, Request, Response } from "express";
-import { findUserByEmail, createUser, findUserById } from "../../prisma/user";
-import { processIncomingMessages, Notification, signToken, verifyToken, DecodedToken } from '../utils';
+import { findUserByEmail, createUser, } from "../../prisma/user";
+import { processIncomingMessages, Notification, signToken, validateSession, readSessionCookie } from '../utils';
 
 const createSendToken = (
     user: User,
@@ -27,6 +27,7 @@ const createSendToken = (
 
     // Set the user object to the res.locals
     res.locals.user = user;
+    req.user = user;
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -42,70 +43,54 @@ const createSendToken = (
 };
 
 export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    // Check if the user object is present in res.locals
-    if (req.locals.user) {
-        // User object is present, continue to the next middleware
-        next();
-    } else {
-        // Check if the accessToken cookie is present
-        const accessToken = req.cookies.accessToken;
-        if (accessToken) {
-            try {
-                // Verify the token and extract the user ID
-                const decodedToken = await verifyToken(accessToken, process.env.JWT_SECRET!);
-                // Find the user by the user ID
-                const user = await findUserById({ id: decodedToken.userId });
-                if (user) {
-                    // Set the user object in req.locals
-                    req.locals.user = user;
-                    // Continue to the next middleware
-                    next();
-                } else {
-                    // User not found, send a 401 Unauthorized response
-                    res.status(401).json({ error: 'Unauthorized' });
-                }
-            } catch (error) {
-                // Error verifying the token, send an error
-                res.status(401).json({ error: 'Unauthorized' });
-            }
-        } else {
-            // No accessToken, send an error
-            res.status(401).json({ error: 'Unauthorized' });
+    if (req.user || (req.locals && req.locals.user)) {
+        console.log("the req.user exists");
+        return next();
+    }
+    console.log("the req.user does not exist");
+
+    try {
+        const token = readSessionCookie(req.headers.cookie ?? '');
+
+        if (!token) return next()
+
+        const user = await validateSession(token);
+        if (!user) {
+            return next(
+                new Error('The user belonging to this token does not exist.')
+            );
         }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error('Error in authentication middleware:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 export const validate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { accessToken } = req.cookies;
+    const accessToken = req.cookies.accessToken;
 
-    if (accessToken && accessToken !== undefined) {
-        try {
-            const decodedToken: DecodedToken = await verifyToken(accessToken, process.env.JWT_SECRET as string);
-            console.log('Decoded token:', decodedToken);
-
-            const user = await findUserById({ id: decodedToken.userId });
-
-            if (!user) {
-                res.status(401).json({ error: 'Invalid token - user not found' });
-                return;
-            }
-
-            res.locals.user = user;
-
-            res.status(200).json({
-                status: 'success',
-                accessToken,
-                data: {
-                    user
-                }
-            }).end();
-        } catch (error) {
-            console.error('Access Token Verification Error:', error);
-            res.status(401).json({ error: 'Invalid access token' });
-        }
-    } else {
+    if (!accessToken) {
         res.status(401).json({ error: 'No access token provided' });
+        return;
     }
+
+    const user = await validateSession(accessToken);
+
+    if (!user) {
+        res.status(401).json({ error: 'Invalid token - user not found' });
+        return;
+    }
+
+    res.status(200).json({
+        status: 'success',
+        accessToken,
+        data: {
+            user
+        }
+    });
 });
 
 export const signup = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {

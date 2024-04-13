@@ -1,17 +1,16 @@
 import express, { Application, Request, Response } from "express";
 import cors from 'cors';
 import cookieParser from "cookie-parser";
-import connectDB from "./config/db";
 import { config } from "dotenv";
 import userRouter from './routes/userRoute';
 import chatRouter from './routes/chatRoute';
 import messageRouter from './routes/messageRoute';
 import type { User } from '@prisma/client';
 import { createUploadthingExpressHandler } from "uploadthing/express";
-import { uploadRouter } from "./uploadthing";
+import { uploadRouter } from "./utils/uploadthing";
+import { readSessionCookie, validateSession } from "./utils";
 
 config()
-connectDB()
 
 const app: Application = express();
 const port = process.env.PORT || 8080;
@@ -25,6 +24,36 @@ app.use(cors({
     preflightContinue: false,
     credentials: true,
 }));
+
+app.use((req, res, next) => {
+    if (req.method === "GET") {
+        return next();
+    }
+    const originHeader = req.headers.origin ?? null;
+    const hostHeader = req.headers.host ?? null;
+    if (!originHeader || !hostHeader) {
+        return res.status(403).end();
+    }
+    return next();
+});
+
+app.use(async (req, res, next) => {
+    const accessToken = readSessionCookie(req.headers.cookie ?? "");
+    if (!accessToken) {
+        res.locals.user = null;
+        return next();
+    }
+
+    const user = await validateSession(accessToken);
+    if (!user) {
+        res.locals.user = null;
+        return next();
+    }
+
+    res.locals.user = user;
+    req.user = user;
+    return next();
+});
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Healthy");
@@ -45,14 +74,7 @@ declare global {
             locals: {
                 user: User | null;
             };
+            user: User | null;
         }
-    }
-}
-
-declare global {
-    interface DecodedToken {
-        userId: string;
-        iat: number;
-        exp: number;
     }
 }
