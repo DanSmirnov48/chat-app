@@ -1,6 +1,6 @@
 import validator from "validator";
 import { Message, User } from "@prisma/client";
-import asyncHandler from "../middlewares/asyncHandler";
+import { asyncHandler } from "../middlewares";
 import { NextFunction, Request, Response } from "express";
 import { findUserByEmail, createUser, } from "../../prisma/user";
 import { processIncomingMessages, Notification, signToken, validateSession, readSessionCookie } from '../utils';

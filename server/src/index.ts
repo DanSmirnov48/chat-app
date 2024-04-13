@@ -8,7 +8,7 @@ import messageRouter from './routes/messageRoute';
 import type { User } from '@prisma/client';
 import { createUploadthingExpressHandler } from "uploadthing/express";
 import { uploadRouter } from "./utils/uploadthing";
-import { readSessionCookie, validateSession } from "./utils";
+import { authenticateUser, checkRequestMethod } from "./middlewares";
 
 config()
 
@@ -24,36 +24,8 @@ app.use(cors({
     preflightContinue: false,
     credentials: true,
 }));
-
-app.use((req, res, next) => {
-    if (req.method === "GET") {
-        return next();
-    }
-    const originHeader = req.headers.origin ?? null;
-    const hostHeader = req.headers.host ?? null;
-    if (!originHeader || !hostHeader) {
-        return res.status(403).end();
-    }
-    return next();
-});
-
-app.use(async (req, res, next) => {
-    const accessToken = readSessionCookie(req.headers.cookie ?? "");
-    if (!accessToken) {
-        res.locals.user = null;
-        return next();
-    }
-
-    const user = await validateSession(accessToken);
-    if (!user) {
-        res.locals.user = null;
-        return next();
-    }
-
-    res.locals.user = user;
-    req.user = user;
-    return next();
-});
+app.use(checkRequestMethod);
+app.use(authenticateUser);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Healthy");

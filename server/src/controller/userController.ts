@@ -1,5 +1,5 @@
 import { Image } from "@prisma/client";
-import asyncHandler from "../middlewares/asyncHandler";
+import { asyncHandler } from "../middlewares";
 import { NextFunction, Request, Response } from "express";
 import { findUserById, getAllUsers, updateDetails } from "../../prisma/user";
 

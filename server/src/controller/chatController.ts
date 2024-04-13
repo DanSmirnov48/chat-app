@@ -1,95 +1,85 @@
-import express, { NextFunction, Request, Response } from "express";
-import asyncHandler from "../middlewares/asyncHandler";
+import { NextFunction, Request, Response } from "express";
+import { asyncHandler } from "../middlewares";
 import { findChatByUsers, create, findChatsByUser, findById } from "../../prisma/chats";
 import { Chat } from "@prisma/client";
 
-export const createChat = asyncHandler(async (req: Request, res: Response) => {
-
+export const createChat = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user1Id: string | null = req.body.user1Id ?? null;
     const user2Id: string | null = req.body.user2Id ?? null;
 
     if (!user1Id || !user2Id) {
-        return res.status(400).json("Invalid IDs").end();
+        res.status(400).json("Invalid IDs").end();
+        return;
     }
 
     try {
         const existingChat: Chat | null = await findChatByUsers(user1Id, user2Id);
         if (existingChat) {
-            return res.status(200).json(existingChat).end();
+            res.status(200).json(existingChat).end();
+        } else {
+            const chat: Chat = await create(user1Id, user2Id);
+            res.status(201).json(chat).end();
         }
-
-        const chat: Chat = await create(user1Id, user2Id);
-        if (chat) {
-            return res.status(201).json(chat).end();
-        }
-
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });
 
-export const findUserChat = asyncHandler(async (req: Request, res: Response) => {
-
+export const findUserChat = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const userId: string | null = req.params.userId ?? null;
-
     if (!userId || typeof userId !== "string") {
-        return res.status(400).json("Invalid User ID").end();
+        res.status(400).json("Invalid User ID").end();
+        return;
     }
 
     try {
         const userChats: Chat[] = await findChatsByUser(userId);
-        if (userChats) {
-            return res.status(201).json(userChats).end();
-        }
-
+        res.status(201).json(userChats).end();
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });
 
-export const findChatById = asyncHandler(async (req: Request, res: Response) => {
-
+export const findChatById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user1Id: string | null = req.body.firstId ?? null;
     const user2Id: string | null = req.body.secondId ?? null;
 
     if (!user1Id || !user2Id) {
-        return res.status(400).json("Invalid IDs").end();
+        res.status(400).json("Invalid IDs").end();
+        return;
     }
 
     try {
         const existingChat: Chat | null = await findChatByUsers(user1Id, user2Id);
         if (existingChat) {
-            return res.status(200).json(existingChat).end();
+            res.status(200).json(existingChat).end();
         } else {
-            return res.status(400).json({ error: "Chat Not Found" }).end();
+            res.status(400).json({ error: "Chat Not Found" }).end();
         }
-
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });
 
-export const findChatByChatId = asyncHandler(async (req: Request, res: Response) => {
-
+export const findChatByChatId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const chatId: string | null = req.params.chatId ?? null;
-
     if (!chatId) {
-        return res.status(400).json("Invalid IDs").end();
+        res.status(400).json("Invalid IDs").end();
+        return;
     }
 
     try {
         const existingChat: Chat = await findById(chatId);
         if (existingChat) {
-            return res.status(200).json(existingChat).end();
+            res.status(200).json(existingChat).end();
         } else {
-            return res.status(400).json({ error: "Chat Not Found" }).end();
+            res.status(400).json({ error: "Chat Not Found" }).end();
         }
-
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'An error occurred while fetching the author.' });
+        next(error);
     }
 });

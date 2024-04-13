@@ -59,7 +59,7 @@ export async function processIncomingMessages(user: User): Promise<{ incomingMes
 
 const verifyAsync = promisify<string, Secret, VerifyOptions, DecodedToken>(jwt.verify);
 
-export const verifyToken = async (token: string, secret: Secret): Promise<DecodedToken> => {
+const verifyToken = async (token: string, secret: Secret): Promise<DecodedToken> => {
     return await verifyAsync(token, secret, {});
 }
 
