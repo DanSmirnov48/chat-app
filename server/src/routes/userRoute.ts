@@ -2,13 +2,15 @@ import express from "express";
 import {
     findAll,
     findUser,
+    updateUserDetails,
+} from "../controller/userController";
+import {
     logIn,
     logout,
     protect,
     signup,
-    updateUserDetails,
     validate,
-} from "../controller/userController";
+} from "../controller/authController";
 
 const router = express.Router();
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import { createChat, findChatByChatId, findChatById, findUserChat } from '../controller/chatController';
-import { protect } from '../controller/userController';
+import { protect } from '../controller/authController';
 
 const router = express.Router();
 

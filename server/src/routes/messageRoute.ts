@@ -5,7 +5,7 @@ import {
     getMessagesByChatId,
     updateMessageStatus,
 } from "../controller/messageController";
-import { protect } from "../controller/userController";
+import { protect } from "../controller/authController";
 
 const router = express.Router();
 
