@@ -2,7 +2,7 @@ import { format, isToday } from 'date-fns';
 import { useChatStore } from '@/hooks/useChat';
 import { Check, CheckCheck, Settings } from "lucide-react";
 import { useUserContext } from '@/context/AuthContext'
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGetAllUsers } from '@/lib/react-query/queries/auth';
 import { IChatWithMessages, IChatWithUser, IUser, MessageStatus } from '@/types'
 import { useCreateNewChat, useGetChatsByUserId } from '@/lib/react-query/queries/chat'
@@ -106,14 +106,16 @@ export default function ChatSidebar() {
                                     <UserProfileForm />
                                 </DialogContent>
                             </Dialog>
-
-                            <div className="h-20 w-20 rounded-full border overflow-hidden">
-                                <Avatar className="h-full w-full">
-                                    <AvatarImage src={"/avatar.png"} />
-                                </Avatar>
-                            </div>
+                            <Avatar className="h-20 w-20 border border-black/40">
+                                <AvatarImage
+                                    src={user.image?.url}
+                                    alt={user.email}
+                                    className="object-cover"
+                                />
+                                <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
+                            </Avatar>
                             <div className="text-sm font-semibold mt-2">{user.name}</div>
-                            <div className="text-xs text-gray-500">Lead UI/UX Designer</div>
+                            <div className="text-xs text-gray-500">{user.bio ?? ""}</div>
                             <div className="flex flex-row items-center mt-3">
                                 <div className="flex flex-col justify-center h-4 w-8 bg-indigo-500 rounded-full">
                                     <div className="h-3 w-3 bg-white rounded-full self-end mr-1"></div>
@@ -156,7 +158,12 @@ export default function ChatSidebar() {
                                                 <button onClick={() => { handleUpdateUnreadMessages(chat, recepient) }} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
                                                     <div className='relative'>
                                                         <Avatar className="h-[50px] w-[50px]">
-                                                            <AvatarImage src={"/avatar.png"} />
+                                                            <AvatarImage
+                                                                src={recepient.image?.url}
+                                                                alt={recepient.name}
+                                                                className="object-cover"
+                                                            />
+                                                            <AvatarFallback className='bg-neutral-200'>{recepient.name.slice(0, 1)}</AvatarFallback>
                                                         </Avatar>
                                                         <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-accent`}></div>
                                                     </div>
@@ -190,7 +197,12 @@ export default function ChatSidebar() {
                                                 <button onClick={() => handleCreateNewChat(u.id)} className="flex flex-row items-center w-full hover:bg-gray-200 rounded-xl p-2">
                                                     <div className='relative'>
                                                         <Avatar className="h-[50px] w-[50px]">
-                                                            <AvatarImage src={"/avatar.png"} />
+                                                            <AvatarImage
+                                                                src={u.image?.url}
+                                                                alt={u.name}
+                                                                className="object-cover"
+                                                            />
+                                                            <AvatarFallback className='bg-neutral-200'>{u.name.slice(0, 1)}</AvatarFallback>
                                                         </Avatar>
                                                         <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-white`}></div>
                                                     </div>

@@ -53,11 +53,11 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage
-              src={""}
+              src={user.image?.url}
               alt={user.email}
               className="object-cover"
             />
-            <AvatarFallback>F U</AvatarFallback>
+            <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

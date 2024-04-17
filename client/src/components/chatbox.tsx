@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { useCreateNewMessage, useGetMessagesByChatId } from '@/lib/react-query/queries/messages';
 import { useGetChatsByUserId } from "@/lib/react-query/queries/chat";
 import { ScrollArea } from "./ui/scroll-area";
-import { Avatar, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useChatStore } from "@/hooks/useChat";
 import {
     ContextMenu,
@@ -72,8 +72,13 @@ const Chatbox = () => {
             <div className="flex flex-col h-full antialiased text-gray-800 overflow-hidden">
                 <div className="flex flex-row items-center w-full bg-indigo-100 border rounded-t-lg p-1.5">
                     <div className='relative'>
-                        <Avatar className="h-10 w-10">
-                            <AvatarImage src={"/avatar.png"} />
+                        <Avatar className="h-10 w-10 border-4">
+                            <AvatarImage
+                                src={recipient?.image?.url}
+                                alt={user.email}
+                                className="object-cover"
+                            />
+                            <AvatarFallback className="text-3xl font-semibold">{user.name.slice(0, 1)}</AvatarFallback>
                         </Avatar>
                         <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'} absolute top-1 right-1 border border-white`}></div>
                     </div>

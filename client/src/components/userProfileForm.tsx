@@ -26,7 +26,7 @@ const ProfileUpdateValidation = z.object({
 const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 
 const UserProfileForm = () => {
-    const { user } = useUserContext();
+    const { user, checkAuthUser } = useUserContext();
 
     const [file, setFile] = useState<FileWithPath[]>([]);
     const [fileUrl, setFileUrl] = useState<string | undefined>(user.image && user.image.url);
@@ -75,24 +75,25 @@ const UserProfileForm = () => {
                 image: user.image ? user.image : undefined
             })
 
-            // if (file.length > 0) {
+            if (file.length > 0) {
 
-            //     const UploadFileResponse = await startUpload(file)
-            //     //extrach the file values from the uplaod resposne
-            //     const { key, name, url } = UploadFileResponse![0]
-            //     console.log(key, name, url)
-            //     //create a new userDetails object with the user photo
-            //     userDetails = ({
-            //         name: value.name,
-            //         bio: value.bio,
-            //         image: { key, name, url }
-            //     })
-            // }
+                const UploadFileResponse = await startUpload(file)
+                //extrach the file values from the uplaod resposne
+                const { key, name, url } = UploadFileResponse![0]
+                console.log(key, name, url)
+                //create a new userDetails object with the user photo
+                userDetails = ({
+                    name: value.name,
+                    bio: value.bio,
+                    image: { key, name, url }
+                })
+            }
 
-            // console.log(userDetails)
+            console.log(userDetails)
             const res = await updateMyAccount(userDetails)
             console.log(res)
             if (res && res.status === 200) {
+                checkAuthUser()
                 toast.success('Your Profile was successfully updated')
             } else {
                 toast.error('Unknown Error at Profile Update')

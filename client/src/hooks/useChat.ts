@@ -28,3 +28,26 @@ export const useChatStore = create<OnlineUsersStore>((set) => ({
     setSocket: (socket) => set({ socket }),
     setRecipient: (recipient) => set({ recipient }),
 }));
+
+
+interface DialogState {
+    signInOpen: boolean;
+    signUpOpen: boolean;
+
+    setSignInOpen: (open: boolean) => void;
+    setSignUpOpen: (open: boolean) => void;
+
+    dialogContent: React.ReactNode | null;
+    setDialogContent: (content: React.ReactNode | null) => void;
+}
+
+export const useDialogStore = create<DialogState>((set) => ({
+    signInOpen: false,
+    signUpOpen: false,
+
+    setSignInOpen: (open) => set({ signInOpen: open }),
+    setSignUpOpen: (open) => set({ signUpOpen: open }),
+
+    dialogContent: null,
+    setDialogContent: (content) => set({ dialogContent: content }),
+}));

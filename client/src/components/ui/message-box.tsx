@@ -63,7 +63,7 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
     const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
 
     async function handleDeleteMessage(message: IMessage) {
-        if (message.senderId !== user.id) {
+        if (message.senderId === user.id) {
             const res = await deleteMessage(message.id)
             if (res.status === 200) {
                 selectedChatId && refetchMessages();
