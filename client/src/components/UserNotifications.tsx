@@ -11,7 +11,7 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Bell, FileCheck, FileX, Navigation } from "lucide-react";
+import { Bell, BookOpen, BookOpenCheck, FileCheck, FileX, MailCheck, MailX, Navigation } from "lucide-react";
 import { useNotificationStore } from "@/hooks/useNotifications";
 import { useGetAllUsers } from "@/lib/react-query/queries/auth";
 import { INotification, IUser, MessageStatus } from "@/types";
@@ -73,7 +73,7 @@ export function UserNotification() {
                     </div>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72" align="end" forceMount>
+            <DropdownMenuContent className="w-[18rem]" align="end" forceMount>
                 {(sortedNotifications.length > 0 && !allUsersLoading) ? sortedNotifications.map((item, idx) => {
                     const sender = allUsers?.data.users.find((u: IUser) => u.id === item.senderId) as IUser
                     const formattedCreatedAt = format(item.date, 'dd/MM/yyyy');
@@ -83,7 +83,8 @@ export function UserNotification() {
 
                     return (
                         <DropdownMenuSub key={idx}>
-                            <div className="flex flex-row justify-between">
+                            <div className="flex flex-row justify-between items-center">
+                                {item.isRead ? <MailCheck className="w-6 h-6 ml-1.5" /> : <MailX className="w-6 h-6 ml-1.5" />}
                                 <DropdownMenuLabel>
                                     <h2>{sender.name}{" "}<span className="font-normal">sent you a Message!</span></h2>
                                     {formattedDate && <h2 className="text-xs text-muted-foreground font-normal">{formattedDate}</h2>}
@@ -96,10 +97,12 @@ export function UserNotification() {
                                         <Navigation className="mr-2 h-4 w-4" />
                                         <span>View Chat</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleMarkAsRead(item)}>
-                                        <FileCheck className="mr-2 h-4 w-4" />
-                                        <span>Mark as Read</span>
-                                    </DropdownMenuItem>
+                                    {!item.isRead &&
+                                        <DropdownMenuItem onClick={() => handleMarkAsRead(item)}>
+                                            <FileCheck className="mr-2 h-4 w-4" />
+                                            <span>Mark as Read</span>
+                                        </DropdownMenuItem>
+                                    }
                                     <DropdownMenuItem onClick={() => removeNotification(item.id)}>
                                         <FileX className="mr-2 h-4 w-4" />
                                         <span>Remove</span>

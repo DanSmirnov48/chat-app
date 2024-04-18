@@ -174,10 +174,10 @@ export default function ChatSidebar() {
                                                                 {formattedDate && <h2 className="text-xs">{formattedDate}</h2>}
                                                             </div>
                                                             <div className='flex items-center ml-2 text-sm text-left mt-auto max-w-44'>
-                                                                {isSelf && latestMessage.status === MessageStatus.SENDING && <Check className="w-[14px] h-[14px] ml-1 text-gray-600" />}
-                                                                {isSelf && latestMessage.status === MessageStatus.SENT && <Check className="w-[14px] h-[14px] ml-1 text-green-600" />}
-                                                                {isSelf && latestMessage.status === MessageStatus.DELIVERED && <CheckCheck className="w-[14px] h-[14px] ml-1 text-gray-600" />}
-                                                                {isSelf && latestMessage.status === MessageStatus.READ && <CheckCheck className="w-[14px] h-[14px] ml-1 text-green-600" />}
+                                                                {isSelf && latestMessage.status === MessageStatus.SENDING && <Check className="min-w-[14px] h-[14px] ml-1 text-gray-600" />}
+                                                                {isSelf && latestMessage.status === MessageStatus.SENT && <Check className="min-w-[14px] h-[14px] ml-1 text-green-600" />}
+                                                                {isSelf && latestMessage.status === MessageStatus.DELIVERED && <CheckCheck className="min-w-[14px] h-[14px] ml-1 text-gray-600" />}
+                                                                {isSelf && latestMessage.status === MessageStatus.READ && <CheckCheck className="min-w-[14px] h-[14px] ml-1 text-green-600" />}
                                                                 <h2 className={`text-sm truncate ${isSelf ? 'ml-1' : ''}`}>{content}</h2>
                                                             </div>
                                                         </div>
