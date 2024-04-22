@@ -5,7 +5,12 @@ import axios from "axios";
 // CHATS
 // ============================================================
 
-export async function getMessagesByChatId({ chatId }: { chatId: string }) {
+interface ICachedMessagesData {
+    data: IMessage[];
+    status: number;
+    statusText: string;
+}
+export async function getMessagesByChatId({ chatId }: { chatId: string }): Promise<ICachedMessagesData | undefined> {
     try {
         const response = await axios.get(`/api/messages/${chatId}`);
         return response;
