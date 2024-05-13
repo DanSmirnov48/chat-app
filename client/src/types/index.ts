@@ -32,6 +32,11 @@ export type IChatWithUser = {
 interface IMessageBase {
     id: string;
     content: string;
+    image?: {
+        key: string;
+        name: string;
+        url: string;
+    };
     senderId: string;
     chatId: string;
     createdAt: Date;

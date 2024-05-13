@@ -60,13 +60,13 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
     const { user } = useUserContext();
     const { selectedChatId, onlineUsers, recipient, socket } = useChatStore();
     const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
-    const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
+    // const { refetch: refetchMessages } = useGetMessagesByChatId({ chatId: selectedChatId ?? '' });
 
     async function handleDeleteMessage(message: IMessage) {
         if (message.senderId === user.id) {
             const res = await deleteMessage(message.id)
             if (res.status === 200) {
-                selectedChatId && refetchMessages();
+                // selectedChatId && refetchMessages();
                 refetchChats();
 
                 const isOnline = onlineUsers.find((u) => u.userId === recipient!.id);
@@ -87,7 +87,8 @@ const MessageBox = forwardRef<HTMLDivElement, MessageBoxProps>(({ className, mes
                 <ContextMenu>
                     <ContextMenuTrigger asChild>
                         <div className={cn("relative text-sm py-2 px-4 shadow rounded-lg max-w-xs", messageBoxVariants({ textStyle: isSelf ? "self" : "other" }))} >
-                            <div className="mb-1 mr-14">{message.content}</div>
+                            <img src={message.image?.url} className="h-full w-full rounded-lg object-scale-down" />
+                            <div className={cn("mb-1 mr-14", { 'pt-1 pl-1': message.image })}>{message.content}</div>
                             <TooltipProvider delayDuration={300}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>

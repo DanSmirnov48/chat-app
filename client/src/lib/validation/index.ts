@@ -1,3 +1,4 @@
+import { UserImage } from "@/types";
 import * as z from "zod";
 
 // ============================================================
@@ -22,4 +23,5 @@ export const SigninValidation = z.object({
 
 export const NewMessageValidation = z.object({
     content: z.string().min(1, { message: "This field is required" }).max(1000, { message: "Maximum 100 characters." }),
+    image: z.custom<UserImage>().optional(),
 });

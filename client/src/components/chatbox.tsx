@@ -2,7 +2,7 @@ import * as z from "zod";
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useForm } from "react-hook-form";
-import { Send, Smile } from 'lucide-react';
+import { Loader2, Paperclip, Send, Smile, X } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUserContext } from '@/context/AuthContext'
 import { NewMessageValidation } from "@/lib/validation";
@@ -22,6 +22,13 @@ import {
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import InputEmoji from "react-input-emoji";
+import { useDropzone } from "@uploadthing/react/hooks";
+import { FileWithPath } from "@uploadthing/react";
+import { generateClientDropzoneAccept } from "uploadthing/client";
+import { useUploadThing } from "@/utils/uploadthing";
+import { useCallback, useState } from 'react';
+
+const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 
 const Chatbox = () => {
     const { selectedChatId, socket, recipient, onlineUsers, setSelectedChatId } = useChatStore();
@@ -31,12 +38,43 @@ const Chatbox = () => {
     const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
     const { data: getMessages, isLoading: chatMessagesLoading } = useGetMessagesByChatId({ chatId: selectedChatId ?? "" });
 
+    const [file, setFile] = useState<FileWithPath[]>([]);
+    const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+
     const isOnline = onlineUsers.find((u) => u.userId === recipient!.id);
+
+    // !chatMessagesLoading && console.log(getMessages)
+
+    const onDrop = useCallback((acceptedFiles: FileWithPath[]) => {
+        const newFile = [...acceptedFiles];
+        const newFileUrls = newFile.map(convertFileToUrl);
+
+        setFile(newFile);
+        setFileUrl(newFileUrls[0]);
+    }, [file]);
+
+    const { startUpload, isUploading, permittedFileInfo, } = useUploadThing("imageUploader", {
+        onClientUploadComplete: (data) => { console.log(data) },
+        onUploadError: (error: Error) => { console.log(error) },
+        onUploadBegin: (fileName: string) => { console.log("upload started for ", fileName) },
+        onUploadProgress: (progress: number) => setUploadProgress(progress),
+    });
+
+    const fileTypes = permittedFileInfo?.config ? Object.keys(permittedFileInfo?.config) : [];
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        accept: fileTypes ? generateClientDropzoneAccept(fileTypes) : undefined,
+        maxFiles: 1
+    });
+
 
     const form = useForm<z.infer<typeof NewMessageValidation>>({
         resolver: zodResolver(NewMessageValidation),
         defaultValues: {
             content: "",
+            image: undefined,
         },
     });
 
@@ -46,6 +84,14 @@ const Chatbox = () => {
                 chatId: selectedChatId,
                 senderId: user.id,
                 content: message.content,
+            }
+
+            if (file.length > 0) {
+                const UploadFileResponse = await startUpload(file)
+                const { key, name, url } = UploadFileResponse![0]
+                newMessage.image = { key, name, url }
+
+                handleRemoveNewFile()
             }
 
             const res = await createNewMessage(newMessage)
@@ -66,6 +112,11 @@ const Chatbox = () => {
             }
         }
     };
+
+    function handleRemoveNewFile() {
+        setFileUrl(undefined);
+        setFile([]);
+    }
 
     return (
         <div className="flex-1 rounded-lg bg-accent lg:col-span-2">
@@ -106,12 +157,43 @@ const Chatbox = () => {
                     </ContextMenuContent>
                 </ContextMenu>
 
+                {fileUrl &&
+                    <div className="w-full border-t-4">
+                        <div className="grid grid-cols-3 lg:grid-cols-4 gap-4  p-4">
+                            <div className="relative">
+                                <img
+                                    src={fileUrl}
+                                    className="h-48 lg:h-[200px] w-full rounded-lg object-scale-down border-4 border-dashed p-5"
+                                />
+                                <X className="absolute top-2 right-2 cursor-pointer" onClick={handleRemoveNewFile} />
+                            </div>
+                        </div>
+                    </div>
+                }
+
                 <div className="m-2">
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSendMessage)}
                             className="flex flex-col items-center sm:flex-row"
                         >
+
+                            <FormField
+                                control={form.control}
+                                name="image"
+                                render={({ field }) => (
+                                    <FormItem className="flex">
+                                        <FormControl>
+                                            <div {...getRootProps()}>
+                                                <input {...getInputProps()} className="cursor-pointer" />
+                                                <Button type="button" size={"icon"} variant={"ghost"}><Paperclip /></Button>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage className="shad-form_message" />
+                                    </FormItem>
+                                )}
+                            />
+
                             <div className="flex flex-row items-center mb-4 sm:mb-0 w-full sm:mr-2">
                                 <FormField
                                     control={form.control}
@@ -133,8 +215,7 @@ const Chatbox = () => {
                                 />
                             </div>
                             <Button type="submit" className="flex-shrink-0 h-10">
-                                Send
-                                <Send className='w-5 h-5 ml-2' />
+                                {isUploading ? <><Loader2 className="animate-spin h-5 w-5 mr-3" />Upoading...</> : <>Send<Send className='w-5 h-5 ml-2' /></>}
                             </Button>
                         </form>
                     </Form>
