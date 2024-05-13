@@ -13,7 +13,7 @@ import { useCreateNewMessage, useGetMessagesByChatId } from '@/lib/react-query/q
 import { useGetChatsByUserId } from "@/lib/react-query/queries/chat";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useChatStore } from "@/hooks/useChat";
+import { useBackgroundStore, useChatStore } from "@/hooks/useChat";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -37,6 +37,9 @@ const Chatbox = () => {
     const { mutateAsync: createNewMessage } = useCreateNewMessage()
     const { refetch: refetchChats } = useGetChatsByUserId({ userId: user.id })
     const { data: getMessages, isLoading: chatMessagesLoading } = useGetMessagesByChatId({ chatId: selectedChatId ?? "" });
+
+    const selectedBackground = useBackgroundStore((state) => state.selectedBackground);
+    const setSelectedBackground = useBackgroundStore((state) => state.setSelectedBackground);
 
     const [file, setFile] = useState<FileWithPath[]>([]);
     const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
@@ -119,9 +122,11 @@ const Chatbox = () => {
     }
 
     return (
-        <div className="flex-1 rounded-lg bg-accent lg:col-span-2">
+        <div className="flex-1 rounded-lg bg-no-repeat bg-center lg:col-span-2 bg-contain border-4 border-accent"
+            style={{ backgroundImage: `url(${selectedBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', opacity: 1 }}
+        >
             <div className="flex flex-col h-full antialiased text-gray-800 overflow-hidden">
-                <div className="flex flex-row items-center w-full bg-indigo-100 border rounded-t-lg p-1.5">
+                <div className="flex flex-row items-center w-full bg-accent rounded-t-sm p-1.5">
                     <div className='relative'>
                         <Avatar className="h-10 w-10 border-4">
                             <AvatarImage

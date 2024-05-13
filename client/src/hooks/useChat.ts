@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Socket } from 'socket.io-client';
 import { IChatWithUser, IUser } from '@/types';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface OnlineUser {
     userId: string;
@@ -51,3 +52,21 @@ export const useDialogStore = create<DialogState>((set) => ({
     dialogContent: null,
     setDialogContent: (content) => set({ dialogContent: content }),
 }));
+
+interface BackgroundStore {
+    selectedBackground: string;
+    setSelectedBackground: (background: string) => void;
+}
+
+export const useBackgroundStore = create<BackgroundStore>()(
+    persist(
+        (set) => ({
+            selectedBackground: '',
+            setSelectedBackground: (background) => set({ selectedBackground: background }),
+        }),
+        {
+            name: 'chat-app-settings',
+            storage: createJSONStorage(() => localStorage),
+        }
+    )
+);

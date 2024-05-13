@@ -20,6 +20,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from './ui/button';
+import ChatWindowSettings from './chatWindowSettings';
 
 export default function ChatSidebar() {
     const { user } = useUserContext();
@@ -215,6 +216,24 @@ export default function ChatSidebar() {
                             </TabsContent>
                         </Tabs>
                     </div>
+                </div>
+                <div className='w-full h-20 bg-red-200/10 flex items-center'>
+                    <Dialog>
+                        <DialogTrigger asChild className=''>
+                            <Button variant="link">
+                                <Settings />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="p-10">
+                            <DialogHeader>
+                                <DialogTitle>Chat Window Settings</DialogTitle>
+                                <DialogDescription>
+                                    Customize how your chat window looks like here
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ChatWindowSettings />
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
         </div >
