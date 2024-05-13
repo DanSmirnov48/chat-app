@@ -1,15 +1,16 @@
-import { Message, MessageStatus, PrismaClient } from '@prisma/client';
+import { Image, Message, MessageStatus, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function create(chatId: string, senderId: string, content: string): Promise<Message> {
+export async function create(chatId: string, senderId: string, content: string, image?: Image): Promise<Message> {
     try {
         const newMessage = await prisma.message.create({
             data: {
                 content: content,
                 senderId: senderId,
                 chatId: chatId,
-                status: MessageStatus.SENT
+                status: MessageStatus.SENT,
+                image: image
             }
         });
 
@@ -37,12 +38,17 @@ export async function findByChatId(chatId: string): Promise<Message[]> {
     }
 }
 
-export async function updateStatus(messageId: string, newStatus: MessageStatus): Promise<void> {
+export async function updateStatus(messageId: string, newStatus: MessageStatus) {
     try {
-        await prisma.message.update({
+        const updatedMesage = await prisma.message.update({
             where: { id: messageId },
             data: { status: newStatus },
+            include: {
+                chat: true,
+                sender: true,
+            }
         });
+        return updatedMesage
     } catch (error) {
         throw new Error(`Error updating message status: ${error}`);
     }

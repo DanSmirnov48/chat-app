@@ -33,7 +33,8 @@ export const updateUserDetails = asyncHandler(async (req: Request, res: Response
     const bio: string | null = req.body.bio ?? null;
     const image: Image | null = req.body.image ?? null;
 
-    const userId = req.locals.user?.id;
+    const userId = req.user?.id;
+    
     if (userId) {
         try {
             const user = await updateDetails({ id: userId, name, bio, image });

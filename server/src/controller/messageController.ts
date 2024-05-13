@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../middlewares";
 import { create, deleteById, findByChatId, updateStatus } from "../../prisma/message";
-import { MessageStatus } from "@prisma/client";
+import { Image, MessageStatus } from "@prisma/client";
 
 export const createMessage = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const chatId: string | null = req.body.chatId ?? null;
     const senderId: string | null = req.body.senderId ?? null;
     const content: string | null = req.body.content ?? null;
+    const image: Image | undefined = req.body.image ?? null;
 
     if (!chatId || !senderId || !content) {
         res.status(400).json("Error with Something").end();
@@ -14,7 +15,7 @@ export const createMessage = asyncHandler(async (req: Request, res: Response, ne
     }
 
     try {
-        const newMessage = await create(chatId, senderId, content);
+        const newMessage = await create(chatId, senderId, content, image);
         if (newMessage) {
             res.status(201).json(newMessage).end();
         }
@@ -59,8 +60,8 @@ export const updateMessageStatus = asyncHandler(async (req: Request, res: Respon
     }
 
     try {
-        await updateStatus(messageId, newStatus as MessageStatus);
-        res.status(200).json({ status: 'success' }).end();
+        const updatedMesage = await updateStatus(messageId, newStatus as MessageStatus);
+        res.status(200).json({ updatedMesage, status: 'success' }).end();
     } catch (error) {
         console.error(error);
         next(error);

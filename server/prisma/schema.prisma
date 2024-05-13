@@ -39,6 +39,7 @@ model Chat {
 model Message {
   id        String        @id @default(auto()) @map("_id") @db.ObjectId
   content   String
+  image     Image?
   sender    User          @relation(fields: [senderId], references: [id])
   senderId  String        @db.ObjectId
   chat      Chat          @relation(fields: [chatId], references: [id])
